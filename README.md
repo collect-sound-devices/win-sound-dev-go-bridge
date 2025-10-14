@@ -6,7 +6,7 @@ Go + cgo bridge to `SoundAgentApiDll.dll` for monitoring/querying Windows defaul
 Prereqs: CGO enabled and a GCC-style toolchain (MinGW-w64 gcc or LLVM-mingw clang). MSVC `cl.exe` is not supported by cgo.
 
 ```powershell
-set CGO_ENABLED=1
+$Env:CGO_ENABLE=1
 
 go build -o (Join-Path $PWD.Path 'bin/')
 
