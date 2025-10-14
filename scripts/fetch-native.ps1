@@ -22,9 +22,7 @@ $ErrorActionPreference = "Stop"
 $baseModDir = (go env GOMODCACHE)
 
 $PkgDir = Join-Path -Path $baseModDir -ChildPath $RepoPath
-$PkgDir = Join-Path -Path $PkgDir -ChildPath "v4"
-$PkgDir += $Tag
-$PkgDir = Join-Path -Path $PkgDir -ChildPath "v4"
+$PkgDir = Join-Path -Path $PkgDir -ChildPath "v4@$Tag"
 $PkgDir = Join-Path -Path $PkgDir -ChildPath $PkgSubDir
 
 Write-Host "PkgSubDir: $PkgSubDir ..."
