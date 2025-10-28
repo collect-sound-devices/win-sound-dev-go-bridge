@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build github.com/eduarddanziger/win-sound-dev-go-bridge" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <module name="win-sound-dev-go-bridge" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="CGO_ENABLED" value="1" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="github.com/eduarddanziger/win-sound-dev-go-bridge" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$" />
+    <output_directory value="$PROJECT_DIR$/bin" />
+    <method v="2" />
+  </configuration>
+</component>

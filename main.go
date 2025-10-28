@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"win-sound-dev-go-bridge/internal/app"
+	"github.com/eduarddanziger/win-sound-dev-go-bridge/internal/app"
 )
 
 var (
@@ -34,7 +34,10 @@ func CoInitializeEx(coInit uintptr) error {
 }
 
 func CoUninitialize() {
-	procCoUninitialize.Call() // error is ignored
+	_, _, err := procCoUninitialize.Call()
+	if err != nil {
+		return
+	} // error ignored
 }
 
 func main() {
