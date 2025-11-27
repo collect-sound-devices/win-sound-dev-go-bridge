@@ -71,7 +71,7 @@ jobs:
 
           Write-Host "llvm-mingw installed under $dest"
 
-      - name: Build Go binary (CGO, Windows)
+      - name: Build Go binary (CGO, Windows) first time, compiler errors ignored
         shell: powershell
         env:
           APP_VERSION: ${{ env.APP_VERSION }}
@@ -83,7 +83,13 @@ jobs:
           New-Item -ItemType Directory -Force -Path (Join-Path $PWD "bin") | Out-Null
 
           $ldflags = "-X github.com/eduarddanziger/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
+          Write-Host "[non-fatal] Running initial go build with CGO..."
           go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/')
+          if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Initial go build failed with exit code $LASTEXITCODE; continuing pipeline as fetch-native and final build may still succeed."
+            # Reset exit code to avoid failing the step
+            $global:LASTEXITCODE = 0
+          }
 
       - name: Run fetch-native script
         shell: powershell
