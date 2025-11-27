@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"win-sound-dev-go-bridge/internal/app"
+	"github.com/eduarddanziger/win-sound-dev-go-bridge/internal/app"
 )
 
 var (
@@ -16,9 +16,10 @@ var (
 	procCoUninitialize = modOle32.NewProc("CoUninitialize")
 )
 
+//goland:noinspection ALL
 const (
 	COINIT_APARTMENTTHREADED = 0x2 // Single-threaded apartment
-	COINIT_MULTITHREADED     = 0x0 // Multi-threaded apartment
+	COINIT_MULTITHREADED     = 0x0 // Multithreaded apartment
 )
 
 // suppress unused
@@ -34,7 +35,10 @@ func CoInitializeEx(coInit uintptr) error {
 }
 
 func CoUninitialize() {
-	procCoUninitialize.Call() // error is ignored
+	_, _, err := procCoUninitialize.Call()
+	if err != nil {
+		return
+	} // error ignored
 }
 
 func main() {

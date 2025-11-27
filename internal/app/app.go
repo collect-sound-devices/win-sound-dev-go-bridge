@@ -2,33 +2,41 @@ package app
 
 import (
 	"context"
-	"github.com/eduarddanziger/sound-win-scanner/v4/pkg/soundlibwrap"
 	"log"
 	"os"
 	"strings"
-	"win-sound-dev-go-bridge/pkg/appinfo"
+
+	"github.com/eduarddanziger/win-sound-dev-go-bridge/pkg/appinfo"
+
+	"github.com/eduarddanziger/sound-win-scanner/v4/pkg/soundlibwrap"
 )
 
 var SaaHandle soundlibwrap.Handle
 
+var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds)
+
 func Run(ctx context.Context) error {
-	logger := log.New(os.Stdout, "", log.LstdFlags)
-	prefix := "log event handler,"
-	// Bridge C log messages to Go logger.
-	soundlibwrap.SetLogHandler(func(level, content string) {
-		switch strings.ToLower(level) {
-		case "trace", "debug":
-			logger.Printf("[%s debug] %s", prefix, content)
-		case "info":
-			logger.Printf("[%s info] %s", prefix, content)
-		case "warn", "warning":
-			logger.Printf("[%s warn] %s", prefix, content)
-		case "error", "critical":
-			logger.Printf("[%s error] %s", prefix, content)
-		default:
-			logger.Printf("[%s log] %s", prefix, content)
-		}
-	})
+
+	{
+		logHandlerLogger := log.New(os.Stdout, "", 0)
+		prefix := "Log event handler,"
+		// Bridge C logHandlerLogger messages to Go logHandlerLogger.
+		soundlibwrap.SetLogHandler(func(ts, level, content string) {
+			// Prefix each logHandlerLogger from the C side with a timestamp (microseconds)
+			switch strings.ToLower(level) {
+			case "trace", "debug":
+				logHandlerLogger.Printf("%s [%s debug] %s", ts, prefix, content)
+			case "info":
+				logHandlerLogger.Printf("%s [%s info] %s", ts, prefix, content)
+			case "warn", "warning":
+				logHandlerLogger.Printf("%s [%s warn] %s", ts, prefix, content)
+			case "error", "critical":
+				logHandlerLogger.Printf("%s [%s error] %s", ts, prefix, content)
+			default:
+				logHandlerLogger.Printf("%s [%s info] %s", ts, prefix, content)
+			}
+		})
+	}
 
 	// Device default change notifications.
 	soundlibwrap.SetDefaultRenderHandler(func(present bool) {
@@ -71,14 +79,14 @@ func Run(ctx context.Context) error {
 
 	// Print the default render and capture devices.
 	if desc, err := soundlibwrap.GetDefaultRender(SaaHandle); err == nil {
-		logger.Printf("[initially print default render] name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
+		logger.Printf("Default render device: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 	} else {
-		logger.Printf("[initially print default render] error: %v", err)
+		logger.Printf("Default render device error: %v", err)
 	}
 	if desc, err := soundlibwrap.GetDefaultCapture(SaaHandle); err == nil {
-		logger.Printf("[initially print default capture] name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
+		logger.Printf("Default capture device: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 	} else {
-		logger.Printf("[initially print default capture] error: %v", err)
+		logger.Printf("Default capture device error: %v", err)
 	}
 
 	// Keep running until interrupted to receive async logs and change events.
