@@ -124,10 +124,12 @@ jobs:
         run: |
           $artifactName = "go-bridge-$Env:APP_VERSION.zip"
           Write-Host "Creating artifact $artifactName from bin/ ..."
-          if (-not (Test-Path -Path (Join-Path $PWD "bin"))) {
+          $binPath = Join-Path $PWD "bin"
+          if (-not (Test-Path -Path $binPath)) {
             throw "bin directory not found; nothing to package."
           }
-          Compress-Archive -Path (Join-Path $PWD "bin" '*') -DestinationPath (Join-Path $PWD $artifactName) -Force
+          $binGlob = Join-Path $binPath "*"
+          Compress-Archive -Path $binGlob -DestinationPath (Join-Path $PWD $artifactName) -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
