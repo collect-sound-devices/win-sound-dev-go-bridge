@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   setup-and-compute-version:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.VERSION }}
     steps:
@@ -139,6 +139,9 @@ jobs:
             # Reset exit code to avoid failing the step
             $global:LASTEXITCODE = 0
           }
+
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Run fetch-native script
         shell: powershell
