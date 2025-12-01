@@ -80,34 +80,6 @@ jobs:
         with:
           go-version: "1.25.x"
 
-      - name: Install llvm-mingw (clang toolchain for CGO)
-        shell: powershell
-        run: |
-          # NOTE: keep this in sync with a real llvm-mingw release tag
-          $url = "https://github.com/mstorsjo/llvm-mingw/releases/download/20240619/llvm-mingw-20240619-msvcrt-x86_64.zip"
-          $zip = Join-Path $Env:TEMP "llvm-mingw.zip"
-          $destRoot = "C:\tools"
-          $dest = Join-Path $destRoot "llvm-mingw"
-
-          New-Item -ItemType Directory -Force -Path $destRoot | Out-Null
-          New-Item -ItemType Directory -Force -Path $dest | Out-Null
-
-          Write-Host "Downloading llvm-mingw from $url ..."
-          Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
-
-          Write-Host "Extracting to $dest ..."
-          Expand-Archive -Path $zip -DestinationPath $dest -Force
-
-          # The archive usually unpacks into a subfolder; move contents up if needed
-          $inner = Get-ChildItem -Path $dest | Where-Object { $_.PSIsContainer } | Select-Object -First 1
-          if ($inner) {
-            Write-Host "Flattening $($inner.FullName) into $dest ..."
-            Get-ChildItem -Path $inner.FullName | Move-Item -Destination $dest -Force
-            Remove-Item -Recurse -Force $inner.FullName
-          }
-          Remove-Item $zip -Force
-          Write-Host "llvm-mingw installed under $dest"
-
       - name: Setting environment variables for the rest of the steps
         shell: powershell
         run: |
@@ -119,8 +91,9 @@ jobs:
             $version = $version.Substring(1)
           }
           $cgo_enabled = "1"
-          $cc  = "C:\tools\llvm-mingw\bin\x86_64-w64-mingw32-clang.exe"
-          $cxx = "C:\tools\llvm-mingw\bin\x86_64-w64-mingw32-clang++.exe"
+          # Use MSVC clang-cl from the Visual Studio toolchain (available on windows-latest)
+          $cc  = "clang-cl.exe"
+          $cxx = "clang-cl.exe"
           Write-Host "Computed APP_VERSION=$version"
           "CGO_ENABLED=$cgo_enabled" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           "CC=$cc" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
@@ -155,87 +128,6 @@ jobs:
           Write-Host "Running fetch-native.ps1 for $Env:GITHUB_REPOSITORY@$Env:GITHUB_REF_NAME (sha $Env:GITHUB_SHA, run $Env:GITHUB_RUN_ID) with APP_VERSION=$Env:APP_VERSION"
           .\scripts\fetch-native.ps1 -DllOutSubDir "bin"
 
-      - name: Generate Windows version resource
-        shell: powershell
-        env:
-          APP_VERSION: ${{ env.APP_VERSION }}
-        run: |
-          $version = $Env:APP_VERSION
-          if (-not $version) {
-            $version = "0.0.0"
-          }
-
-          if ($version.StartsWith("v")) {
-            $version = $version.Substring(1)
-          }
-
-          $core = $version.Split('-')[0]
-          $parts = $core.Split('.')
-          while ($parts.Count -lt 4) {
-            $parts += "0"
-          }
-          $major = [int]$parts[0]
-          $minor = [int]$parts[1]
-          $patch = [int]$parts[2]
-          $build = [int]$parts[3]
-
-          $fileVersionComma = "$major,$minor,$patch,$build"
-          $productVersionComma = $fileVersionComma
-          $fileVersionStr = $version
-          $productVersionStr = $version
-
-          $companyName = "Eduard Danziger"
-          $fileDesc = "win-sound-dev-go-bridge"
-          $internalName = "win-sound-dev-go-bridge"
-          $originalFilename = "win-sound-dev-go-bridge.exe"
-          $productName = "win-sound-dev-go-bridge"
-
-          $root = "$PWD"
-          $tmpl = Join-Path $root "internal\winres\version.rc.in"
-          $outRc = Join-Path $root "internal\winres\version.rc"
-
-          if (-not (Test-Path $tmpl)) {
-            throw "Template version.rc.in not found at $tmpl"
-          }
-
-          $content = Get-Content $tmpl -Raw
-          $content = $content.Replace("@FILEVERSION_COMMA@", $fileVersionComma)
-          $content = $content.Replace("@PRODUCTVERSION_COMMA@", $productVersionComma)
-          $content = $content.Replace("@FILEVERSION_STR@", $fileVersionStr)
-          $content = $content.Replace("@PRODUCTVERSION_STR@", $productVersionStr)
-          $content = $content.Replace("@COMPANY_NAME@", $companyName)
-          $content = $content.Replace("@FILE_DESCRIPTION@", $fileDesc)
-          $content = $content.Replace("@INTERNAL_NAME@", $internalName)
-          $content = $content.Replace("@ORIGINAL_FILENAME@", $originalFilename)
-          $content = $content.Replace("@PRODUCT_NAME@", $productName)
-
-          New-Item -ItemType Directory -Force -Path (Split-Path $outRc) | Out-Null
-          Set-Content -Path $outRc -Value $content -Encoding ascii
-
-          Write-Host "Generated version.rc:"
-          Get-Content $outRc
-
-      - name: Compile Windows version resource
-        shell: powershell
-        run: |
-          $root = "$PWD"
-          $rc = Join-Path $root "internal\winres\version.rc"
-          $outSyso = Join-Path $root "version.syso"
-
-          if (-not (Test-Path $rc)) {
-            throw "version.rc not found at $rc"
-          }
-
-          $windres = "C:\tools\llvm-mingw\bin\x86_64-w64-mingw32-windres.exe"
-          if (-not (Test-Path $windres)) {
-            throw "windres not found at $windres"
-          }
-
-          & $windres $rc -O coff -o $outSyso
-          if ($LASTEXITCODE -ne 0) {
-            throw "windres failed with exit code $LASTEXITCODE"
-          }
-          Write-Host "Generated $outSyso"
 
       - name: Rebuild Go binary after native fetch
         shell: powershell
