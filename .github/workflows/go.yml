@@ -215,3 +215,12 @@ jobs:
           else
             gh release create "$VERS" --title "Go-bridge $VERS" --notes "Release $VERS"
           fi
+          # Upload or update the build artifact as a release asset
+          if [ -f "build/go-bridge-$VERS.zip" ]; then
+            gh release upload "$VERS" "build/go-bridge-$VERS.zip" --clobber
+          elif [ -n "$(ls build 2>/dev/null)" ]; then
+            # Fallback: upload any file(s) in the build directory
+            gh release upload "$VERS" build/* --clobber
+          else
+            echo "No artifacts found in build/ to attach to release $VERS"
+          fi
