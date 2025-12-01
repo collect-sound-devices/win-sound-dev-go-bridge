@@ -72,6 +72,9 @@ jobs:
       VERSION: ${{ needs.setup-and-compute-version.outputs.version }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -139,9 +142,6 @@ jobs:
             # Reset exit code to avoid failing the step
             $global:LASTEXITCODE = 0
           }
-
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Run fetch-native script
         shell: powershell
