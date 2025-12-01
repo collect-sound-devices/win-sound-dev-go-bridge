@@ -155,6 +155,88 @@ jobs:
           Write-Host "Running fetch-native.ps1 for $Env:GITHUB_REPOSITORY@$Env:GITHUB_REF_NAME (sha $Env:GITHUB_SHA, run $Env:GITHUB_RUN_ID) with APP_VERSION=$Env:APP_VERSION"
           .\scripts\fetch-native.ps1 -DllOutSubDir "bin"
 
+      - name: Generate Windows version resource
+        shell: powershell
+        env:
+          APP_VERSION: ${{ env.APP_VERSION }}
+        run: |
+          $version = $Env:APP_VERSION
+          if (-not $version) {
+            $version = "0.0.0"
+          }
+
+          if ($version.StartsWith("v")) {
+            $version = $version.Substring(1)
+          }
+
+          $core = $version.Split('-')[0]
+          $parts = $core.Split('.')
+          while ($parts.Count -lt 4) {
+            $parts += "0"
+          }
+          $major = [int]$parts[0]
+          $minor = [int]$parts[1]
+          $patch = [int]$parts[2]
+          $build = [int]$parts[3]
+
+          $fileVersionComma = "$major,$minor,$patch,$build"
+          $productVersionComma = $fileVersionComma
+          $fileVersionStr = $version
+          $productVersionStr = $version
+
+          $companyName = "Eduard Danziger"
+          $fileDesc = "win-sound-dev-go-bridge"
+          $internalName = "win-sound-dev-go-bridge"
+          $originalFilename = "win-sound-dev-go-bridge.exe"
+          $productName = "win-sound-dev-go-bridge"
+
+          $root = "$PWD"
+          $tmpl = Join-Path $root "internal\winres\version.rc.in"
+          $outRc = Join-Path $root "internal\winres\version.rc"
+
+          if (-not (Test-Path $tmpl)) {
+            throw "Template version.rc.in not found at $tmpl"
+          }
+
+          $content = Get-Content $tmpl -Raw
+          $content = $content.Replace("@FILEVERSION_COMMA@", $fileVersionComma)
+          $content = $content.Replace("@PRODUCTVERSION_COMMA@", $productVersionComma)
+          $content = $content.Replace("@FILEVERSION_STR@", $fileVersionStr)
+          $content = $content.Replace("@PRODUCTVERSION_STR@", $productVersionStr)
+          $content = $content.Replace("@COMPANY_NAME@", $companyName)
+          $content = $content.Replace("@FILE_DESCRIPTION@", $fileDesc)
+          $content = $content.Replace("@INTERNAL_NAME@", $internalName)
+          $content = $content.Replace("@ORIGINAL_FILENAME@", $originalFilename)
+          $content = $content.Replace("@PRODUCT_NAME@", $productName)
+
+          New-Item -ItemType Directory -Force -Path (Split-Path $outRc) | Out-Null
+          Set-Content -Path $outRc -Value $content -Encoding ascii
+
+          Write-Host "Generated version.rc:"
+          Get-Content $outRc
+
+      - name: Compile Windows version resource
+        shell: powershell
+        run: |
+          $root = "$PWD"
+          $rc = Join-Path $root "internal\winres\version.rc"
+          $outSyso = Join-Path $root "version.syso"
+
+          if (-not (Test-Path $rc)) {
+            throw "version.rc not found at $rc"
+          }
+
+          $windres = "C:\tools\llvm-mingw\bin\x86_64-w64-mingw32-windres.exe"
+          if (-not (Test-Path $windres)) {
+            throw "windres not found at $windres"
+          }
+
+          & $windres $rc -O coff -o $outSyso
+          if ($LASTEXITCODE -ne 0) {
+            throw "windres failed with exit code $LASTEXITCODE"
+          }
+          Write-Host "Generated $outSyso"
+
       - name: Rebuild Go binary after native fetch
         shell: powershell
         env:

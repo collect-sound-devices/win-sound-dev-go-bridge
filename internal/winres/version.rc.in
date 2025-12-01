@@ -1,0 +1,30 @@
+#include <winver.h>
+
+1 VERSIONINFO
+FILEVERSION @FILEVERSION_COMMA@
+PRODUCTVERSION @PRODUCTVERSION_COMMA@
+FILEFLAGSMASK 0x3fL
+FILEFLAGS 0x0L
+FILEOS 0x40004L
+FILETYPE 0x1L
+FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "@COMPANY_NAME@\0"
+            VALUE "FileDescription", "@FILE_DESCRIPTION@\0"
+            VALUE "FileVersion", "@FILEVERSION_STR@\0"
+            VALUE "InternalName", "@INTERNAL_NAME@\0"
+            VALUE "OriginalFilename", "@ORIGINAL_FILENAME@\0"
+            VALUE "ProductName", "@PRODUCT_NAME@\0"
+            VALUE "ProductVersion", "@PRODUCTVERSION_STR@\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04e4
+    END
+END
+
