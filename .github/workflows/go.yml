@@ -80,6 +80,41 @@ jobs:
         with:
           go-version: "1.25.x"
 
+      - name: Setup MSVC developer environment
+        shell: powershell
+        run: |
+          # Use vswhere to locate the latest VS with C++ tools
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) {
+            throw "vswhere.exe not found at $vswhere"
+          }
+
+          $vsInstallPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (-not $vsInstallPath) {
+            throw "No Visual Studio with C++ tools found."
+          }
+
+          Write-Host "Using Visual Studio at $vsInstallPath"
+
+          $vcvarsall = Join-Path $vsInstallPath 'VC\Auxiliary\Build\vcvarsall.bat'
+          if (-not (Test-Path $vcvarsall)) {
+            throw "vcvarsall.bat not found at $vcvarsall"
+          }
+
+          # Run vcvarsall.bat to set up the environment for x64 and capture it into this PowerShell session
+          $tmpFile = New-TemporaryFile
+          cmd.exe /c "`"$vcvarsall`" x64 >nul && set" | Out-File -FilePath $tmpFile -Encoding ASCII
+
+          Get-Content $tmpFile | ForEach-Object {
+            $name, $value = $_ -split '=', 2
+            if ($name -and $value) {
+              # Persist into GitHub Actions env so subsequent steps (including Go) see MSVC+Clang toolchain
+              "$name=$value" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+            }
+          }
+
+          Remove-Item $tmpFile -Force
+
       - name: Setting environment variables for the rest of the steps
         shell: powershell
         run: |
@@ -91,7 +126,7 @@ jobs:
             $version = $version.Substring(1)
           }
           $cgo_enabled = "1"
-          # Use MSVC clang-cl from the Visual Studio toolchain (available on windows-latest)
+          # Use MSVC clang-cl from the Visual Studio toolchain
           $cc  = "clang-cl.exe"
           $cxx = "clang-cl.exe"
           Write-Host "Computed APP_VERSION=$version"
@@ -128,14 +163,13 @@ jobs:
           Write-Host "Running fetch-native.ps1 for $Env:GITHUB_REPOSITORY@$Env:GITHUB_REF_NAME (sha $Env:GITHUB_SHA, run $Env:GITHUB_RUN_ID) with APP_VERSION=$Env:APP_VERSION"
           .\scripts\fetch-native.ps1 -DllOutSubDir "bin"
 
-
       - name: Rebuild Go binary after native fetch
         shell: powershell
         env:
           APP_VERSION: ${{ env.APP_VERSION }}
         run: |
           $ldflags = "-X github.com/eduarddanziger/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
-          Write-Host "Restarting go build with CGO..."
+          Write-Host "Restarting go build with CGO (MSVC/clang-cl)..."
           go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/')
 
       - name: Package bin directory
