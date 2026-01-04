@@ -35,16 +35,12 @@ func CoInitializeEx(coInit uintptr) error {
 }
 
 func CoUninitialize() {
-	_, _, err := procCoUninitialize.Call()
-	if err != nil {
-		return
-	} // error ignored
+	procCoUninitialize.Call() // best‑effort cleanup; failure is ignored
 }
 
 func main() {
-	err := CoInitializeEx(COINIT_MULTITHREADED) // error is ignored
-	if err != nil {
-		log.Fatalf("CoInitializeEx failed: %v", err)
+	if err := CoInitializeEx(COINIT_MULTITHREADED); err != nil {
+		log.Fatalf("COM initialization failed: %v", err)
 	}
 	defer CoUninitialize()
 

@@ -72,6 +72,9 @@ jobs:
       VERSION: ${{ needs.setup-and-compute-version.outputs.version }}
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -140,9 +143,6 @@ jobs:
             $global:LASTEXITCODE = 0
           }
 
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Run fetch-native script
         shell: powershell
         env:
@@ -190,7 +190,9 @@ jobs:
   publish:
     if: github.ref != 'refs/pull/develop'
     # if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    needs:
+      - setup-and-compute-version
+      - build
     runs-on: ubuntu-latest
 
     steps:
@@ -204,11 +206,21 @@ jobs:
           path: build
 
       - name: Create or update Release
+        env:
+          VERS: ${{ needs.setup-and-compute-version.outputs.version }}
         run: |
-          VERS=${{ needs.setup-and-compute-version.outputs.version }}
           echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
           if gh release view "$VERS" > /dev/null 2>&1; then
             echo "Release $VERS already exists; updating assets"
           else
             gh release create "$VERS" --title "Go-bridge $VERS" --notes "Release $VERS"
+          fi
+          # Upload or update the build artifact as a release asset
+          if [ -f "build/go-bridge-$VERS.zip" ]; then
+            gh release upload "$VERS" "build/go-bridge-$VERS.zip" --clobber
+          elif [ -n "$(ls build 2>/dev/null)" ]; then
+            # Fallback: upload any file(s) in the build directory
+            gh release upload "$VERS" build/* --clobber
+          else
+            echo "No artifacts found in build/ to attach to release $VERS"
           fi
