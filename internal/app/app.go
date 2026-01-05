@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/eduarddanziger/win-sound-dev-go-bridge/pkg/appinfo"
+	"github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo"
 
-	"github.com/eduarddanziger/sound-win-scanner/v4/pkg/soundlibwrap"
+	"github.com/collect-sound-devices/sound-win-scanner/v4/pkg/soundlibwrap"
 )
 
 var SaaHandle soundlibwrap.Handle
