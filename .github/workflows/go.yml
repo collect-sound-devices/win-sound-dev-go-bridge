@@ -134,7 +134,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path (Join-Path $PWD "bin") | Out-Null
 
-          $ldflags = "-X github.com/eduarddanziger/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
+          $ldflags = "-X github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
           Write-Host "[non-fatal] Running initial go build with CGO..."
           go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/')
           if ($LASTEXITCODE -ne 0) {
@@ -160,7 +160,7 @@ jobs:
         env:
           APP_VERSION: ${{ env.APP_VERSION }}
         run: |
-          $ldflags = "-X github.com/eduarddanziger/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
+          $ldflags = "-X github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
           Write-Host "Restarting go build with CGO..."
           go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/')
 

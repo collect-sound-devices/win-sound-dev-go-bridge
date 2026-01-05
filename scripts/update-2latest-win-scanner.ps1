@@ -1,11 +1,11 @@
 # pick latest stable if it's newer than any rc; otherwise latest rc
-$mod = 'github.com/eduarddanziger/sound-win-scanner/v4'
+$mod = 'github.com/collect-sound-devices/sound-win-scanner/v4'
 
 # need Go on PATH
 if (-not (Get-Command go -ErrorAction SilentlyContinue)) { throw 'go not found in PATH' }
 
 # list published module versions
-$all = (go list -m -versions -proxy=direct $mod) -split '\s+'
+$all = (go list -m -versions $mod) -split '\s+'
 
 # no versions -> nothing to pick
 if (-not $all -or $all.Count -lt 2) { throw "no versions returned for $mod" }
