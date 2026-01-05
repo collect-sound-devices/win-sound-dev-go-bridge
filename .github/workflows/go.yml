@@ -153,7 +153,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
           Write-Host "Running fetch-native.ps1 for $Env:GITHUB_REPOSITORY@$Env:GITHUB_REF_NAME (sha $Env:GITHUB_SHA, run $Env:GITHUB_RUN_ID) with APP_VERSION=$Env:APP_VERSION"
-          .\scripts\fetch-native.ps1 -DllOutSubDir "bin"
+          .\scripts\internal\fetch-native.ps1 -DllOutSubDir "bin"
 
       - name: Rebuild Go binary after native fetch
         shell: powershell
