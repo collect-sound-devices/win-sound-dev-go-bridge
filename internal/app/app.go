@@ -78,6 +78,22 @@ func Run(ctx context.Context) error {
 		}
 	})
 
+	// Volume change notifications.
+	soundlibwrap.SetRenderVolumeChangedHandler(func() {
+		if desc, err := soundlibwrap.GetDefaultRender(SaaHandle); err == nil {
+			logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
+		} else {
+			logError("Render volume changed, can not read it: %v", err)
+		}
+	})
+	soundlibwrap.SetCaptureVolumeChangedHandler(func() {
+		if desc, err := soundlibwrap.GetDefaultCapture(SaaHandle); err == nil {
+			logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
+		} else {
+			logError("Capture volume changed, can not read it: %v", err)
+		}
+	})
+
 	logInfo("Initializing...")
 
 	// Initialize the C library and register callbacks using the global handle.
