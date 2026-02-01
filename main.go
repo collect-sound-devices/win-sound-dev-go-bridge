@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/app"
+	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/cliapp"
 )
 
 var (
@@ -47,7 +47,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	if err := app.Run(ctx); err != nil {
+	if err := cliapp.Run(ctx); err != nil {
 		log.Fatalf("exit with error: %v", err)
 	}
 }
