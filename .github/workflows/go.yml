@@ -136,7 +136,8 @@ jobs:
 
           $ldflags = "-X github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
           Write-Host "[non-fatal] Running initial go build with CGO..."
-          go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/')
+          go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-logger
+          go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
           if ($LASTEXITCODE -ne 0) {
             Write-Warning "Initial go build failed with exit code $LASTEXITCODE; continuing pipeline as fetch-native and final build may still succeed."
             # Reset exit code to avoid failing the step
@@ -162,7 +163,8 @@ jobs:
         run: |
           $ldflags = "-X github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
           Write-Host "Restarting go build with CGO..."
-          go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/')
+          go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-logger
+          go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
 
       - name: Package bin directory
         shell: powershell
