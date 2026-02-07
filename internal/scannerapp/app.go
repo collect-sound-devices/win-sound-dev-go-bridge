@@ -4,8 +4,11 @@ import (
 	"context"
 	"log"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/enqueuer"
 	"github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo"
 
 	"github.com/collect-sound-devices/sound-win-scanner/v4/pkg/soundlibwrap"
@@ -31,12 +34,27 @@ func logError(format string, v ...interface{}) {
 }
 
 func Run(ctx context.Context) error {
+	reqEnqueuer := enqueuer.NewEmptyRequestEnqueuer(logger)
+	enqueue := func(name string, fields map[string]string) {
+		if err := reqEnqueuer.EnqueueRequest(enqueuer.Request{
+			Name:      name,
+			Timestamp: time.Now(),
+			Fields:    fields,
+		}); err != nil {
+			logError("enqueue failed: %v", err)
+		}
+	}
 
 	{
 		logHandlerLogger := log.New(os.Stdout, "", 0)
 		prefix := "cpp backend,"
 		// Bridge C logHandlerLogger messages to Go logHandlerLogger.
 		soundlibwrap.SetLogHandler(func(timestamp, level, content string) {
+			enqueue("cpp_log", map[string]string{
+				"timestamp": timestamp,
+				"level":     level,
+				"content":   content,
+			})
 			// Prefix each logHandlerLogger from the C side with a timestamp (microseconds)
 			switch strings.ToLower(level) {
 			case "trace", "debug":
@@ -57,11 +75,24 @@ func Run(ctx context.Context) error {
 	soundlibwrap.SetDefaultRenderHandler(func(present bool) {
 		if present {
 			if desc, err := soundlibwrap.GetDefaultRender(SaaHandle); err == nil {
+				enqueue("default_render_changed", map[string]string{
+					"present": "true",
+					"name":    desc.Name,
+					"pnp_id":  desc.PnpID,
+					"volume":  strconv.Itoa(int(desc.RenderVolume)),
+				})
 				logInfo("Render device changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 			} else {
+				enqueue("default_render_changed", map[string]string{
+					"present": "true",
+					"error":   err.Error(),
+				})
 				logError("Render device changed, can not read it: %v", err)
 			}
 		} else {
+			enqueue("default_render_changed", map[string]string{
+				"present": "false",
+			})
 			logInfo("Render device removed")
 		}
 
@@ -69,11 +100,24 @@ func Run(ctx context.Context) error {
 	soundlibwrap.SetDefaultCaptureHandler(func(present bool) {
 		if present {
 			if desc, err := soundlibwrap.GetDefaultCapture(SaaHandle); err == nil {
+				enqueue("default_capture_changed", map[string]string{
+					"present": "true",
+					"name":    desc.Name,
+					"pnp_id":  desc.PnpID,
+					"volume":  strconv.Itoa(int(desc.RenderVolume)),
+				})
 				logInfo("Capture device changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 			} else {
+				enqueue("default_capture_changed", map[string]string{
+					"present": "true",
+					"error":   err.Error(),
+				})
 				logError("Capture device changed, can not read it: %v", err)
 			}
 		} else {
+			enqueue("default_capture_changed", map[string]string{
+				"present": "false",
+			})
 			logInfo("Capture device removed")
 		}
 	})
@@ -81,15 +125,31 @@ func Run(ctx context.Context) error {
 	// Volume change notifications.
 	soundlibwrap.SetRenderVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultRender(SaaHandle); err == nil {
+			enqueue("render_volume_changed", map[string]string{
+				"name":   desc.Name,
+				"pnp_id": desc.PnpID,
+				"volume": strconv.Itoa(int(desc.RenderVolume)),
+			})
 			logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 		} else {
+			enqueue("render_volume_changed", map[string]string{
+				"error": err.Error(),
+			})
 			logError("Render volume changed, can not read it: %v", err)
 		}
 	})
 	soundlibwrap.SetCaptureVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultCapture(SaaHandle); err == nil {
+			enqueue("capture_volume_changed", map[string]string{
+				"name":   desc.Name,
+				"pnp_id": desc.PnpID,
+				"volume": strconv.Itoa(int(desc.CaptureVolume)),
+			})
 			logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 		} else {
+			enqueue("capture_volume_changed", map[string]string{
+				"error": err.Error(),
+			})
 			logError("Capture volume changed, can not read it: %v", err)
 		}
 	})
