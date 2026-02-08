@@ -83,10 +83,6 @@ func Run(ctx context.Context) error {
 				})
 				logInfo("Render device changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 			} else {
-				enqueue("default_render_changed", map[string]string{
-					"present": "true",
-					"error":   err.Error(),
-				})
 				logError("Render device changed, can not read it: %v", err)
 			}
 		} else {
@@ -108,10 +104,6 @@ func Run(ctx context.Context) error {
 				})
 				logInfo("Capture device changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 			} else {
-				enqueue("default_capture_changed", map[string]string{
-					"present": "true",
-					"error":   err.Error(),
-				})
 				logError("Capture device changed, can not read it: %v", err)
 			}
 		} else {
@@ -132,9 +124,6 @@ func Run(ctx context.Context) error {
 			})
 			logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 		} else {
-			enqueue("render_volume_changed", map[string]string{
-				"error": err.Error(),
-			})
 			logError("Render volume changed, can not read it: %v", err)
 		}
 	})
@@ -147,9 +136,6 @@ func Run(ctx context.Context) error {
 			})
 			logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 		} else {
-			enqueue("capture_volume_changed", map[string]string{
-				"error": err.Error(),
-			})
 			logError("Capture volume changed, can not read it: %v", err)
 		}
 	})
