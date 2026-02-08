@@ -18,6 +18,18 @@ var SaaHandle soundlibwrap.Handle
 
 var logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmicroseconds)
 
+const (
+	eventDefaultRenderChanged  = "default_render_changed"
+	eventDefaultRenderRemoved  = "default_render_removed"
+	eventDefaultCaptureChanged = "default_capture_changed"
+	eventDefaultCaptureRemoved = "default_capture_removed"
+	eventRenderVolumeChanged   = "render_volume_changed"
+	eventCaptureVolumeChanged  = "capture_volume_changed"
+
+	flowRender  = "render"
+	flowCapture = "capture"
+)
+
 func logf(level, format string, v ...interface{}) {
 	if level == "" {
 		level = "info"
@@ -31,6 +43,43 @@ func logInfo(format string, v ...interface{}) {
 
 func logError(format string, v ...interface{}) {
 	logf("error", format, v...)
+}
+
+func postDeviceToApi(enqueue func(string, map[string]string), eventType, flowType, name, pnpID string, renderVolume, captureVolume *int) {
+	fields := map[string]string{
+		"device_message_type": eventType,
+		"update_date":         time.Now().UTC().Format(time.RFC3339),
+	}
+	if flowType != "" {
+		fields["flow_type"] = flowType
+	}
+	if name != "" {
+		fields["name"] = name
+	}
+	if pnpID != "" {
+		fields["pnp_id"] = pnpID
+	}
+	if renderVolume != nil {
+		fields["render_volume"] = strconv.Itoa(*renderVolume)
+	}
+	if captureVolume != nil {
+		fields["capture_volume"] = strconv.Itoa(*captureVolume)
+	}
+
+	enqueue("post_device", fields)
+}
+
+func putVolumeChangeToApi(enqueue func(string, map[string]string), eventType, pnpID string, volume int) {
+	fields := map[string]string{
+		"device_message_type": eventType,
+		"update_date":         time.Now().UTC().Format(time.RFC3339),
+		"volume":              strconv.Itoa(volume),
+	}
+	if pnpID != "" {
+		fields["pnp_id"] = pnpID
+	}
+
+	enqueue("put_volume_change", fields)
 }
 
 func Run(ctx context.Context) error {
@@ -69,20 +118,14 @@ func Run(ctx context.Context) error {
 	soundlibwrap.SetDefaultRenderHandler(func(present bool) {
 		if present {
 			if desc, err := soundlibwrap.GetDefaultRender(SaaHandle); err == nil {
-				enqueue("default_render_changed", map[string]string{
-					"present": "true",
-					"name":    desc.Name,
-					"pnp_id":  desc.PnpID,
-					"volume":  strconv.Itoa(int(desc.RenderVolume)),
-				})
+				renderVolume := int(desc.RenderVolume)
+				postDeviceToApi(enqueue, eventDefaultRenderChanged, flowRender, desc.Name, desc.PnpID, &renderVolume, nil)
 				logInfo("Render device changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 			} else {
 				logError("Render device changed, can not read it: %v", err)
 			}
 		} else {
-			enqueue("default_render_changed", map[string]string{
-				"present": "false",
-			})
+			postDeviceToApi(enqueue, eventDefaultRenderRemoved, flowRender, "", "", nil, nil)
 			logInfo("Render device removed")
 		}
 
@@ -90,20 +133,14 @@ func Run(ctx context.Context) error {
 	soundlibwrap.SetDefaultCaptureHandler(func(present bool) {
 		if present {
 			if desc, err := soundlibwrap.GetDefaultCapture(SaaHandle); err == nil {
-				enqueue("default_capture_changed", map[string]string{
-					"present": "true",
-					"name":    desc.Name,
-					"pnp_id":  desc.PnpID,
-					"volume":  strconv.Itoa(int(desc.RenderVolume)),
-				})
+				captureVolume := int(desc.CaptureVolume)
+				postDeviceToApi(enqueue, eventDefaultCaptureChanged, flowCapture, desc.Name, desc.PnpID, nil, &captureVolume)
 				logInfo("Capture device changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 			} else {
 				logError("Capture device changed, can not read it: %v", err)
 			}
 		} else {
-			enqueue("default_capture_changed", map[string]string{
-				"present": "false",
-			})
+			postDeviceToApi(enqueue, eventDefaultCaptureRemoved, flowCapture, "", "", nil, nil)
 			logInfo("Capture device removed")
 		}
 	})
@@ -111,11 +148,7 @@ func Run(ctx context.Context) error {
 	// Volume change notifications.
 	soundlibwrap.SetRenderVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultRender(SaaHandle); err == nil {
-			enqueue("render_volume_changed", map[string]string{
-				"name":   desc.Name,
-				"pnp_id": desc.PnpID,
-				"volume": strconv.Itoa(int(desc.RenderVolume)),
-			})
+			putVolumeChangeToApi(enqueue, eventRenderVolumeChanged, desc.PnpID, int(desc.RenderVolume))
 			logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 		} else {
 			logError("Render volume changed, can not read it: %v", err)
@@ -123,11 +156,7 @@ func Run(ctx context.Context) error {
 	})
 	soundlibwrap.SetCaptureVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultCapture(SaaHandle); err == nil {
-			enqueue("capture_volume_changed", map[string]string{
-				"name":   desc.Name,
-				"pnp_id": desc.PnpID,
-				"volume": strconv.Itoa(int(desc.CaptureVolume)),
-			})
+			putVolumeChangeToApi(enqueue, eventCaptureVolumeChanged, desc.PnpID, int(desc.CaptureVolume))
 			logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 		} else {
 			logError("Capture volume changed, can not read it: %v", err)
