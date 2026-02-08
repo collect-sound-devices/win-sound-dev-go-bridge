@@ -16,6 +16,6 @@ func (e *EmptyRequestEnqueuer) EnqueueRequest(request Request) error {
 	if e == nil || e.logger == nil {
 		return nil
 	}
-	e.logger.Printf("[enqueue] name=%s fields=%v", request.Name, request.Fields)
+	e.logger.Printf("[info] name=%s fields=%v", request.Name, request.Fields)
 	return nil
 }

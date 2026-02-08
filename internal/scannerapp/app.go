@@ -48,14 +48,8 @@ func Run(ctx context.Context) error {
 	{
 		logHandlerLogger := log.New(os.Stdout, "", 0)
 		prefix := "cpp backend,"
-		// Bridge C logHandlerLogger messages to Go logHandlerLogger.
+		// Bridge C soundlibwrap messages to Go logHandlerLogger.
 		soundlibwrap.SetLogHandler(func(timestamp, level, content string) {
-			enqueue("cpp_log", map[string]string{
-				"timestamp": timestamp,
-				"level":     level,
-				"content":   content,
-			})
-			// Prefix each logHandlerLogger from the C side with a timestamp (microseconds)
 			switch strings.ToLower(level) {
 			case "trace", "debug":
 				logHandlerLogger.Printf("%s [%s debug] %s", timestamp, prefix, content)
