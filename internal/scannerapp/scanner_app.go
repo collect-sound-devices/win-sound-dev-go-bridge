@@ -10,8 +10,8 @@ import (
 )
 
 type ScannerApp struct {
-	handle  soundlibwrap.Handle
-	enqueue func(string, map[string]string)
+	soundLibHandle soundlibwrap.Handle
+	enqueueFunc    func(string, map[string]string)
 }
 
 func (a *ScannerApp) init() error {
@@ -19,19 +19,19 @@ func (a *ScannerApp) init() error {
 	if err != nil {
 		return err
 	}
-	a.handle = h
-	if err := soundlibwrap.RegisterCallbacks(a.handle); err != nil {
-		_ = soundlibwrap.Uninitialize(a.handle)
-		a.handle = 0
+	a.soundLibHandle = h
+	if err := soundlibwrap.RegisterCallbacks(a.soundLibHandle); err != nil {
+		_ = soundlibwrap.Uninitialize(a.soundLibHandle)
+		a.soundLibHandle = 0
 		return err
 	}
 	return nil
 }
 
 func (a *ScannerApp) shutdown() {
-	if a.handle != 0 {
-		_ = soundlibwrap.Uninitialize(a.handle)
-		a.handle = 0
+	if a.soundLibHandle != 0 {
+		_ = soundlibwrap.Uninitialize(a.soundLibHandle)
+		a.soundLibHandle = 0
 	}
 }
 
@@ -46,7 +46,7 @@ func (a *ScannerApp) postDeviceToApi(eventType, flowType, name, pnpID string, re
 		"capture_volume":      strconv.Itoa(captureVolume),
 	}
 
-	a.enqueue("post_device", fields)
+	a.enqueueFunc("post_device", fields)
 }
 
 func (a *ScannerApp) putVolumeChangeToApi(eventType, pnpID string, volume int) {
@@ -59,14 +59,14 @@ func (a *ScannerApp) putVolumeChangeToApi(eventType, pnpID string, volume int) {
 		fields["pnp_id"] = pnpID
 	}
 
-	a.enqueue("put_volume_change", fields)
+	a.enqueueFunc("put_volume_change", fields)
 }
 
 func (a *ScannerApp) attachHandlers() {
 	// Device default change notifications.
 	soundlibwrap.SetDefaultRenderHandler(func(present bool) {
 		if present {
-			if desc, err := soundlibwrap.GetDefaultRender(a.handle); err == nil {
+			if desc, err := soundlibwrap.GetDefaultRender(a.soundLibHandle); err == nil {
 				renderVolume := int(desc.RenderVolume)
 				captureVolume := int(desc.CaptureVolume)
 				a.postDeviceToApi(eventDefaultRenderChanged, flowRender, desc.Name, desc.PnpID, renderVolume, captureVolume)
@@ -82,7 +82,7 @@ func (a *ScannerApp) attachHandlers() {
 	})
 	soundlibwrap.SetDefaultCaptureHandler(func(present bool) {
 		if present {
-			if desc, err := soundlibwrap.GetDefaultCapture(a.handle); err == nil {
+			if desc, err := soundlibwrap.GetDefaultCapture(a.soundLibHandle); err == nil {
 				renderVolume := int(desc.RenderVolume)
 				captureVolume := int(desc.CaptureVolume)
 				a.postDeviceToApi(eventDefaultCaptureChanged, flowCapture, desc.Name, desc.PnpID, renderVolume, captureVolume)
@@ -98,7 +98,7 @@ func (a *ScannerApp) attachHandlers() {
 
 	// Volume change notifications.
 	soundlibwrap.SetRenderVolumeChangedHandler(func() {
-		if desc, err := soundlibwrap.GetDefaultRender(a.handle); err == nil {
+		if desc, err := soundlibwrap.GetDefaultRender(a.soundLibHandle); err == nil {
 			a.putVolumeChangeToApi(eventRenderVolumeChanged, desc.PnpID, int(desc.RenderVolume))
 			logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 		} else {
@@ -106,7 +106,7 @@ func (a *ScannerApp) attachHandlers() {
 		}
 	})
 	soundlibwrap.SetCaptureVolumeChangedHandler(func() {
-		if desc, err := soundlibwrap.GetDefaultCapture(a.handle); err == nil {
+		if desc, err := soundlibwrap.GetDefaultCapture(a.soundLibHandle); err == nil {
 			a.putVolumeChangeToApi(eventCaptureVolumeChanged, desc.PnpID, int(desc.CaptureVolume))
 			logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 		} else {

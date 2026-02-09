@@ -52,7 +52,7 @@ func Run(ctx context.Context) error {
 	}
 
 	app := &ScannerApp{
-		enqueue: enqueue,
+		enqueueFunc: enqueue,
 	}
 
 	{
@@ -85,7 +85,7 @@ func Run(ctx context.Context) error {
 	defer app.shutdown()
 
 	// Post the default render and capture devices.
-	if desc, err := soundlibwrap.GetDefaultRender(app.handle); err == nil {
+	if desc, err := soundlibwrap.GetDefaultRender(app.soundLibHandle); err == nil {
 		if desc.PnpID == "" {
 			logInfo("No default render device.")
 		} else {
@@ -95,7 +95,7 @@ func Run(ctx context.Context) error {
 	} else {
 		logError("Render device info, can not read it: %v", err)
 	}
-	if desc, err := soundlibwrap.GetDefaultCapture(app.handle); err == nil {
+	if desc, err := soundlibwrap.GetDefaultCapture(app.soundLibHandle); err == nil {
 		if desc.PnpID == "" {
 			logInfo("No default capture device.")
 		} else {
