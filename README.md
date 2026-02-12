@@ -24,6 +24,8 @@ go build -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-log
 go build -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
 ```
 
+Alternative: run `.\scripts\build.ps1` (or `.\scripts\build.ps1 -m ""`).
+
 ## Run
 ```powershell
 .\bin\win-sound-logger.exe
