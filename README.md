@@ -40,9 +40,12 @@ Then use remote debugging in your IDE (e.g. GoLand) to connect to localhost:2345
 ## External module
 - github.com/collect-sound-devices/sound-win-scanner/v4 (pkg/soundlibwrap): cgo wrapper around SoundAgentApi, see [soundlibwrap documentation](https://pkg.go.dev/github.com/collect-sound-devices/sound-win-scanner/v4/pkg/soundlibwrap)
 
-## Advanced
-You can use  clang instead of gcc:
-```bat
-set CC=...x86_64-w64-mingw32-clang
-set CXX=...x86_64-w64-mingw32-clang++
-```
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).
+
+## Contact
+
+Eduard Danziger
+
+Email: [edanziger@gmx.de](mailto:edanziger@gmx.de)
