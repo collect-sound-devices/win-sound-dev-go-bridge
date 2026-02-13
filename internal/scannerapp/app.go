@@ -62,10 +62,10 @@ func Run(ctx context.Context) error {
 
 func newRequestEnqueuer(logger logging.Logger) (enqueuer.EnqueueRequest, func(), error) {
 	mode := strings.ToLower(strings.TrimSpace(os.Getenv("WIN_SOUND_ENQUEUER")))
-	if mode == "" || mode == "empty" {
+	if mode == "empty" {
 		return enqueuer.NewEmptyRequestEnqueuer(logger), func() {}, nil
 	}
-	if mode != "rabbitmq" {
+	if mode != "" && mode != "rabbitmq" {
 		return nil, nil, fmt.Errorf("unsupported WIN_SOUND_ENQUEUER=%q (supported: empty, rabbitmq)", mode)
 	}
 

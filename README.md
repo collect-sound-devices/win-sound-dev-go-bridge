@@ -33,11 +33,10 @@ Alternative: run `.\scripts\build.ps1` (or `.\scripts\build.ps1 -m ""`).
 ```
 
 ## RabbitMQ Mode (scanner)
-By default, scanner uses an empty enqueuer (`WIN_SOUND_ENQUEUER=empty`).
-
-To publish requests to RabbitMQ (similar to `RabbitMqHttpRequestDispatcher` + `RequestPublisher` from `SoundWinAgent`), set:
+By default, scanner uses the RabbitMQ-enqueuer (`WIN_SOUND_ENQUEUER=rabbitmq`).
+To disable request publishing to RabbitMQ, set it to `empty`:
 ```powershell
-$Env:WIN_SOUND_ENQUEUER = "rabbitmq"
+$Env:WIN_SOUND_ENQUEUER = "empty"
 
 # Optional overrides (defaults shown)
 $Env:WIN_SOUND_RABBITMQ_HOST = "localhost"
@@ -49,10 +48,6 @@ $Env:WIN_SOUND_RABBITMQ_EXCHANGE = "sdr_exchange"
 $Env:WIN_SOUND_RABBITMQ_QUEUE = "sdr_queue"
 $Env:WIN_SOUND_RABBITMQ_ROUTING_KEY = "sdr_bind"
 ```
-
-Published payload is the request fields plus:
-- `httpRequest` (`POST`/`PUT`)
-- `urlSuffix` (for PUT: `/<pnpId>/<hostName>`)
 
 ## Debug
 Compile with -gcflags=all="-N -l" to disable optimizations and inlining, then run with a debugger
