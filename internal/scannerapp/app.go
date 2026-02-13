@@ -2,10 +2,14 @@ package scannerapp
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/enqueuer"
 	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/logging"
+	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/rabbitmq"
 )
 
 func NewWithLogger(enqueue func(string, map[string]string), logger logging.Logger) (ScannerApp, error) {
@@ -18,7 +22,12 @@ func NewWithLogger(enqueue func(string, map[string]string), logger logging.Logge
 
 func Run(ctx context.Context) error {
 	appLogger := logging.NewAppLogger()
-	reqEnqueuer := enqueuer.NewEmptyRequestEnqueuer(appLogger)
+	reqEnqueuer, cleanupEnqueuer, err := newRequestEnqueuer(appLogger)
+	if err != nil {
+		return err
+	}
+	defer cleanupEnqueuer()
+
 	enqueue := func(name string, fields map[string]string) {
 		if err := reqEnqueuer.EnqueueRequest(enqueuer.Request{
 			Name:      name,
@@ -49,4 +58,33 @@ func Run(ctx context.Context) error {
 	<-ctx.Done()
 	logging.PrintInfo(appLogger, "Shutting down...")
 	return nil
+}
+
+func newRequestEnqueuer(logger logging.Logger) (enqueuer.EnqueueRequest, func(), error) {
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv("WIN_SOUND_ENQUEUER")))
+	if mode == "" || mode == "empty" {
+		return enqueuer.NewEmptyRequestEnqueuer(logger), func() {}, nil
+	}
+	if mode != "rabbitmq" {
+		return nil, nil, fmt.Errorf("unsupported WIN_SOUND_ENQUEUER=%q (supported: empty, rabbitmq)", mode)
+	}
+
+	cfg, err := rabbitmq.LoadConfigFromEnv()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publisher, err := rabbitmq.NewRequestPublisher(cfg, logger)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	reqEnqueuer := enqueuer.NewRabbitMqEnqueuer(publisher, logger)
+	cleanup := func() {
+		if err := reqEnqueuer.Close(); err != nil {
+			logging.PrintError(logger, "rabbitmq enqueuer close failed: %v", err)
+		}
+	}
+
+	return reqEnqueuer, cleanup, nil
 }

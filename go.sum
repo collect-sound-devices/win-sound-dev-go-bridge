@@ -1,2 +1,4 @@
 github.com/collect-sound-devices/sound-win-scanner/v4 v4.0.4-rc.38 h1:3eTsgjG36mZsAGA3VykSs+hCFBI2ouHESPp+1u8Q9Z0=
 github.com/collect-sound-devices/sound-win-scanner/v4 v4.0.4-rc.38/go.mod h1:6prxM/TBm4uaHPBBq66zFxPMjlahnXlAmLXwaYFiVTA=
+github.com/rabbitmq/amqp091-go v1.10.0 h1:STpn5XsHlHGcecLmMFCtg7mqq0RnD+zFr4uzukfVhBw=
+github.com/rabbitmq/amqp091-go v1.10.0/go.mod h1:Hy4jKW5kQART1u+JkDTF9YYOQUHXqMuhrgxOEeS7G4o=
