@@ -39,6 +39,7 @@ type RabbitMessagePublisher interface {
 
 // RabbitMqEnqueuer writes requests to RabbitMQ using the same message-shaping
 type RabbitMqEnqueuer struct {
+	baseCtx          context.Context
 	publisher        RabbitMessagePublisher
 	logger           logging.Logger
 	hostName         string
@@ -47,11 +48,16 @@ type RabbitMqEnqueuer struct {
 }
 
 func NewRabbitMqEnqueuer(publisher RabbitMessagePublisher, logger logging.Logger) *RabbitMqEnqueuer {
+	return NewRabbitMqEnqueuerWithContext(context.Background(), publisher, logger)
+}
+
+func NewRabbitMqEnqueuerWithContext(baseCtx context.Context, publisher RabbitMessagePublisher, logger logging.Logger) *RabbitMqEnqueuer {
 	hostName, err := os.Hostname()
 	if err != nil || strings.TrimSpace(hostName) == "" {
 		hostName = "unknown-host"
 	}
 	return newRabbitMqEnqueuer(
+		baseCtx,
 		publisher,
 		logger,
 		hostName,
@@ -61,12 +67,16 @@ func NewRabbitMqEnqueuer(publisher RabbitMessagePublisher, logger logging.Logger
 }
 
 func newRabbitMqEnqueuer(
+	baseCtx context.Context,
 	publisher RabbitMessagePublisher,
 	logger logging.Logger,
 	hostName string,
 	operationSysName string,
 	publishTimeout time.Duration,
 ) *RabbitMqEnqueuer {
+	if baseCtx == nil {
+		baseCtx = context.Background()
+	}
 	if strings.TrimSpace(hostName) == "" {
 		hostName = "unknown-host"
 	}
@@ -78,6 +88,7 @@ func newRabbitMqEnqueuer(
 	}
 
 	return &RabbitMqEnqueuer{
+		baseCtx:          baseCtx,
 		publisher:        publisher,
 		logger:           logger,
 		hostName:         hostName,
@@ -120,7 +131,7 @@ func (e *RabbitMqEnqueuer) EnqueueRequest(request Request) error {
 
 	e.logf("[info, rabbitmq enqueuer] publishing name=%s method=%s urlSuffix=%s", request.Name, httpRequest, urlSuffix)
 
-	ctx, cancel := context.WithTimeout(context.Background(), e.publishTimeout)
+	ctx, cancel := context.WithTimeout(e.baseCtx, e.publishTimeout)
 	defer cancel()
 	if err := e.publisher.Publish(ctx, body); err != nil {
 		return fmt.Errorf("publish request %q: %w", request.Name, err)

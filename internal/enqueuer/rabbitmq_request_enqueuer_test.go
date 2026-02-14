@@ -25,7 +25,7 @@ func (p *testPublisher) Close() error {
 
 func TestRabbitMqEnqueuerPostDevice(t *testing.T) {
 	pub := &testPublisher{}
-	enq := newRabbitMqEnqueuer(pub, nil, "hostA", "windows", time.Second)
+	enq := newRabbitMqEnqueuer(context.Background(), pub, nil, "hostA", "windows", time.Second)
 
 	err := enq.EnqueueRequest(Request{
 		Name:      "post_device",
@@ -75,7 +75,7 @@ func TestRabbitMqEnqueuerPostDevice(t *testing.T) {
 
 func TestRabbitMqEnqueuerPutVolumeChange(t *testing.T) {
 	pub := &testPublisher{}
-	enq := newRabbitMqEnqueuer(pub, nil, "myHost", "windows", time.Second)
+	enq := newRabbitMqEnqueuer(context.Background(), pub, nil, "myHost", "windows", time.Second)
 
 	err := enq.EnqueueRequest(Request{
 		Name:      "put_volume_change",

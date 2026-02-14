@@ -22,7 +22,7 @@ func NewWithLogger(enqueue func(string, map[string]string), logger logging.Logge
 
 func Run(ctx context.Context) error {
 	appLogger := logging.NewAppLogger()
-	reqEnqueuer, cleanupEnqueuer, err := newRequestEnqueuer(appLogger)
+	reqEnqueuer, cleanupEnqueuer, err := newRequestEnqueuer(ctx, appLogger)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func Run(ctx context.Context) error {
 	return nil
 }
 
-func newRequestEnqueuer(logger logging.Logger) (enqueuer.EnqueueRequest, func(), error) {
+func newRequestEnqueuer(ctx context.Context, logger logging.Logger) (enqueuer.EnqueueRequest, func(), error) {
 	mode := strings.ToLower(strings.TrimSpace(os.Getenv("WIN_SOUND_ENQUEUER")))
 	if mode == "empty" {
 		return enqueuer.NewEmptyRequestEnqueuer(logger), func() {}, nil
@@ -74,12 +74,12 @@ func newRequestEnqueuer(logger logging.Logger) (enqueuer.EnqueueRequest, func(),
 		return nil, nil, err
 	}
 
-	publisher, err := rabbitmq.NewRequestPublisher(cfg, logger)
+	publisher, err := rabbitmq.NewRequestPublisherWithContext(ctx, cfg, logger)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	reqEnqueuer := enqueuer.NewRabbitMqEnqueuer(publisher, logger)
+	reqEnqueuer := enqueuer.NewRabbitMqEnqueuerWithContext(ctx, publisher, logger)
 	cleanup := func() {
 		if err := reqEnqueuer.Close(); err != nil {
 			logging.PrintError(logger, "rabbitmq enqueuer close failed: %v", err)

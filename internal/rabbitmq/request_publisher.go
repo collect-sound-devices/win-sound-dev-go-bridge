@@ -27,6 +27,14 @@ type RequestPublisher struct {
 }
 
 func NewRequestPublisher(cfg Config, logger Logger) (*RequestPublisher, error) {
+	return NewRequestPublisherWithContext(context.Background(), cfg, logger)
+}
+
+func NewRequestPublisherWithContext(ctx context.Context, cfg Config, logger Logger) (*RequestPublisher, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	cfg = cfg.withDefaults()
 
 	p := &RequestPublisher{
@@ -34,7 +42,7 @@ func NewRequestPublisher(cfg Config, logger Logger) (*RequestPublisher, error) {
 		logger: logger,
 	}
 
-	if err := p.connectWithRetryLocked(); err != nil {
+	if err := p.connectWithRetryLocked(ctx); err != nil {
 		return nil, err
 	}
 	return p, nil
@@ -49,7 +57,7 @@ func (p *RequestPublisher) Publish(ctx context.Context, body []byte) error {
 	}
 
 	if p.ch == nil {
-		if err := p.connectWithRetryLocked(); err != nil {
+		if err := p.connectWithRetryLocked(ctx); err != nil {
 			return err
 		}
 	}
@@ -58,7 +66,7 @@ func (p *RequestPublisher) Publish(ctx context.Context, body []byte) error {
 		return nil
 	} else {
 		p.logf("[warn] RabbitMQ publish failed, reconnecting once: %v", err)
-		if recErr := p.connectWithRetryLocked(); recErr != nil {
+		if recErr := p.connectWithRetryLocked(ctx); recErr != nil {
 			return fmt.Errorf("rabbitmq publish failed: %w (reconnect failed: %v)", err, recErr)
 		}
 		if retryErr := p.publishLocked(ctx, body); retryErr != nil {
@@ -128,7 +136,11 @@ func (p *RequestPublisher) publishLocked(ctx context.Context, body []byte) error
 	}
 }
 
-func (p *RequestPublisher) connectWithRetryLocked() error {
+func (p *RequestPublisher) connectWithRetryLocked(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	var lastErr error
 	delay := p.cfg.InitialReconnectDelay
 
@@ -142,7 +154,17 @@ func (p *RequestPublisher) connectWithRetryLocked() error {
 				break
 			}
 			p.logf("[warn] RabbitMQ init attempt %d/%d failed: %v. Retrying in %s...", attempt, p.cfg.MaxReconnectionAttempts, err, delay)
-			time.Sleep(delay)
+
+			timer := time.NewTimer(delay)
+			select {
+			case <-ctx.Done():
+				if !timer.Stop() {
+					<-timer.C
+				}
+				return ctx.Err()
+			case <-timer.C:
+			}
+
 			delay = minDuration(delay*2, p.cfg.MaxReconnectDelay)
 		}
 	}
