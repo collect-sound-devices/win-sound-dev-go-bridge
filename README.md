@@ -14,13 +14,11 @@ $Env:CGO_ENABLED = "1"
 $Env:CC = "E:\tools\llvm-mingw\bin\x86_64-w64-mingw32-clang.exe"
 $Env:CXX = "E:\tools\llvm-mingw\bin\x86_64-w64-mingw32-clang++.exe"
 
-go build -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-logger
 go build -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
 
 .\scripts\fetch-native.ps1
 
 ## once more
-go build -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-logger
 go build -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
 ```
 
@@ -28,7 +26,6 @@ Alternative: run `.\scripts\build.ps1` (or `.\scripts\build.ps1 -m ""`).
 
 ## Run
 ```powershell
-.\bin\win-sound-logger.exe
 .\bin\win-sound-scanner.exe
 ```
 

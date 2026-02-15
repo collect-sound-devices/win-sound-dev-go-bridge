@@ -28,11 +28,9 @@ if ($mingwPath -ne "") {
     $Env:CXX = Join-Path $mingwPath "bin/x86_64-w64-mingw32-clang++.exe"
 }
 
-go build -v -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-logger
 go build -v -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
 
 .\scripts\internal\fetch-native.ps1
 
 ## once more
-go build -v -o (Join-Path $PWD.Path 'bin/win-sound-logger.exe') ./cmd/win-sound-logger
 go build -v -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
