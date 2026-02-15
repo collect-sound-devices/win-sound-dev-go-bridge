@@ -26,11 +26,7 @@ type RequestPublisher struct {
 	confirms <-chan amqp.Confirmation
 }
 
-func NewRequestPublisher(cfg Config, logger Logger) (*RequestPublisher, error) {
-	return NewRequestPublisherWithContext(context.Background(), cfg, logger)
-}
-
-func NewRequestPublisherWithContext(ctx context.Context, cfg Config, logger Logger) (*RequestPublisher, error) {
+func NewRequestPublisher(ctx context.Context, cfg Config, logger Logger) (*RequestPublisher, error) {
 	if ctx == nil {
 		panic("nil context")
 	}

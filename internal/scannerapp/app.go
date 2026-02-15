@@ -62,9 +62,13 @@ func Run(ctx context.Context) error {
 
 func newRequestEnqueuer(ctx context.Context, logger logging.Logger) (enqueuer.EnqueueRequest, func(), error) {
 	mode := strings.ToLower(strings.TrimSpace(os.Getenv("WIN_SOUND_ENQUEUER")))
+
+	// Return a no-op enqueuer for testing or when RabbitMQ is not available.
 	if mode == "empty" {
 		return enqueuer.NewEmptyRequestEnqueuer(logger), func() {}, nil
 	}
+
+	// Validate that the configured mode is supported.
 	if mode != "" && mode != "rabbitmq" {
 		return nil, nil, fmt.Errorf("unsupported WIN_SOUND_ENQUEUER=%q (supported: empty, rabbitmq)", mode)
 	}
@@ -74,7 +78,7 @@ func newRequestEnqueuer(ctx context.Context, logger logging.Logger) (enqueuer.En
 		return nil, nil, err
 	}
 
-	publisher, err := rabbitmq.NewRequestPublisherWithContext(ctx, cfg, logger)
+	publisher, err := rabbitmq.NewRequestPublisher(ctx, cfg, logger)
 	if err != nil {
 		return nil, nil, err
 	}
