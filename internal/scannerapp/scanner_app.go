@@ -72,7 +72,7 @@ func (a *scannerAppImpl) attachHandlers() {
 	// Volume change notifications.
 	soundlibwrap.SetRenderVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultRender(a.soundLibHandle); err == nil {
-			a.putVolumeChangeToApi(uint8(contract.EventTypeVolumeRenderChanged), desc.PnpID, int(desc.RenderVolume))
+			a.putVolumeChangeToApi(uint8(contract.MessageTypeVolumeRenderChanged), desc.PnpID, int(desc.RenderVolume))
 			a.logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 		} else {
 			a.logError("Render volume changed, can not read it: %v", err)
@@ -80,7 +80,7 @@ func (a *scannerAppImpl) attachHandlers() {
 	})
 	soundlibwrap.SetCaptureVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultCapture(a.soundLibHandle); err == nil {
-			a.putVolumeChangeToApi(uint8(contract.EventTypeVolumeCaptureChanged), desc.PnpID, int(desc.CaptureVolume))
+			a.putVolumeChangeToApi(uint8(contract.MessageTypeVolumeCaptureChanged), desc.PnpID, int(desc.CaptureVolume))
 			a.logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 		} else {
 			a.logError("Capture volume changed, can not read it: %v", err)
@@ -111,7 +111,7 @@ func (a *scannerAppImpl) RepostRenderDeviceToApi() {
 	if desc, err := soundlibwrap.GetDefaultRender(a.soundLibHandle); err == nil {
 		renderVolume := int(desc.RenderVolume)
 		captureVolume := int(desc.CaptureVolume)
-		a.postDeviceToApi(uint8(contract.EventTypeDefaultRenderChanged), contract.FlowRender, desc.Name, desc.PnpID, renderVolume, captureVolume)
+		a.postDeviceToApi(uint8(contract.MessageTypeDefaultRenderChanged), contract.FlowRender, desc.Name, desc.PnpID, renderVolume, captureVolume)
 		a.logInfo("Render device identified and updated: name=%q pnpId=%q renderVol=%d captureVol=%d", desc.Name, desc.PnpID, desc.RenderVolume, desc.CaptureVolume)
 	} else {
 		a.logError("Render device can not be identified: %v", err)
@@ -122,7 +122,7 @@ func (a *scannerAppImpl) RepostCaptureDeviceToApi() {
 	if desc, err := soundlibwrap.GetDefaultCapture(a.soundLibHandle); err == nil {
 		renderVolume := int(desc.RenderVolume)
 		captureVolume := int(desc.CaptureVolume)
-		a.postDeviceToApi(uint8(contract.EventTypeDefaultCaptureChanged), contract.FlowCapture, desc.Name, desc.PnpID, renderVolume, captureVolume)
+		a.postDeviceToApi(uint8(contract.MessageTypeDefaultCaptureChanged), contract.FlowCapture, desc.Name, desc.PnpID, renderVolume, captureVolume)
 		a.logInfo("Capture device identified and updated: name=%q pnpId=%q renderVol=%d captureVol=%d", desc.Name, desc.PnpID, desc.RenderVolume, desc.CaptureVolume)
 	} else {
 		a.logError("Capture device can not be identified: %v", err)

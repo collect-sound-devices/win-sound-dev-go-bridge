@@ -134,7 +134,7 @@ func (e *RabbitMqEnqueuer) resolveHttpRequest(request Request, payload map[strin
 	messageType := readEventTypeField(payload, contract.FieldDeviceMessageType)
 	var httpRequest string
 	switch messageType {
-	case contract.EventTypeDefaultRenderChanged, contract.EventTypeDefaultCaptureChanged:
+	case contract.MessageTypeDefaultRenderChanged, contract.MessageTypeDefaultCaptureChanged:
 		httpRequest = "POST"
 	default:
 		httpRequest = "PUT"
@@ -159,16 +159,16 @@ func readStringField(payload map[string]any, key string) string {
 	return ""
 }
 
-func readEventTypeField(payload map[string]any, key string) contract.SoundDeviceEventType {
+func readEventTypeField(payload map[string]any, key string) contract.MessageType {
 	if v, ok := payload[key]; ok {
 		switch value := v.(type) {
-		case contract.SoundDeviceEventType:
+		case contract.MessageType:
 			return value
 		case uint8:
-			return contract.SoundDeviceEventType(value)
+			return contract.MessageType(value)
 		case int:
 			if value >= 0 && value <= int(^uint8(0)) {
-				return contract.SoundDeviceEventType(uint8(value))
+				return contract.MessageType(uint8(value))
 			}
 		}
 	}
