@@ -92,7 +92,7 @@ func (e *RabbitMqEnqueuer) EnqueueRequest(request Request) error {
 	for key, value := range request.Fields {
 		payload[key] = normalizeValue(key, value)
 	}
-	payload[contract.FieldDeviceMessageType] = request.Event
+	payload[contract.FieldDeviceMessageType] = request.MessageType
 
 	httpRequest, urlSuffix := e.resolveHttpRequest(request, payload)
 	payload[contract.FieldHTTPRequest] = httpRequest
@@ -104,6 +104,11 @@ func (e *RabbitMqEnqueuer) EnqueueRequest(request Request) error {
 		}
 		if _, ok := payload[contract.FieldOperationSystemName]; !ok {
 			payload[contract.FieldOperationSystemName] = e.operationSysName
+		}
+
+		flowType := calculateFlowTypeField(contract.MessageType(request.MessageType))
+		if flowType != 0 {
+			payload[contract.FieldFlowType] = flowType
 		}
 	}
 	if _, ok := payload[contract.FieldUpdateDate]; !ok && !request.Timestamp.IsZero() {
@@ -131,10 +136,10 @@ func (e *RabbitMqEnqueuer) Close() error {
 }
 
 func (e *RabbitMqEnqueuer) resolveHttpRequest(request Request, payload map[string]any) (string, string) {
-	messageType := readEventTypeField(payload, contract.FieldDeviceMessageType)
+	messageType := contract.MessageType(request.MessageType)
 	var httpRequest string
 	switch messageType {
-	case contract.EventTypeDefaultRenderChanged, contract.EventTypeDefaultCaptureChanged:
+	case contract.MessageTypeDefaultRenderChanged, contract.MessageTypeDefaultCaptureChanged:
 		httpRequest = "POST"
 	default:
 		httpRequest = "PUT"
@@ -159,18 +164,12 @@ func readStringField(payload map[string]any, key string) string {
 	return ""
 }
 
-func readEventTypeField(payload map[string]any, key string) contract.SoundDeviceEventType {
-	if v, ok := payload[key]; ok {
-		switch value := v.(type) {
-		case contract.SoundDeviceEventType:
-			return value
-		case uint8:
-			return contract.SoundDeviceEventType(value)
-		case int:
-			if value >= 0 && value <= int(^uint8(0)) {
-				return contract.SoundDeviceEventType(uint8(value))
-			}
-		}
+func calculateFlowTypeField(messageType contract.MessageType) contract.FlowType {
+	switch messageType {
+	case contract.MessageTypeDefaultRenderChanged, contract.MessageTypeVolumeRenderChanged:
+		return contract.FlowTypeRender
+	case contract.MessageTypeDefaultCaptureChanged, contract.MessageTypeVolumeCaptureChanged:
+		return contract.FlowTypeCapture
 	}
 	return 0
 }

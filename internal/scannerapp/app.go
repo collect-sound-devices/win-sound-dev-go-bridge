@@ -28,11 +28,11 @@ func Run(ctx context.Context) error {
 	}
 	defer cleanupEnqueuer()
 
-	enqueue := func(event uint8, fields map[string]string) {
+	enqueue := func(messageType uint8, fields map[string]string) {
 		if err := reqEnqueuer.EnqueueRequest(enqueuer.Request{
-			Timestamp: time.Now(),
-			Event:     event,
-			Fields:    fields,
+			Timestamp:   time.Now(),
+			MessageType: messageType,
+			Fields:      fields,
 		}); err != nil {
 			logging.PrintError(appLogger, "enqueue failed: %v", err)
 		}

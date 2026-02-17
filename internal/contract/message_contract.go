@@ -1,12 +1,12 @@
 package contract
 
-type SoundDeviceEventType uint8
+type MessageType uint8
 
 const (
-	EventTypeVolumeRenderChanged   SoundDeviceEventType = 3
-	EventTypeVolumeCaptureChanged  SoundDeviceEventType = 4
-	EventTypeDefaultRenderChanged  SoundDeviceEventType = 5
-	EventTypeDefaultCaptureChanged SoundDeviceEventType = 6
+	MessageTypeVolumeRenderChanged   MessageType = 3
+	MessageTypeVolumeCaptureChanged  MessageType = 4
+	MessageTypeDefaultRenderChanged  MessageType = 5
+	MessageTypeDefaultCaptureChanged MessageType = 6
 )
 
 const (
@@ -14,16 +14,11 @@ const (
 	RequestPutVolumeChange = "put_volume_change"
 )
 
-const (
-	EventDefaultRenderChanged  = "default_render_changed"
-	EventDefaultCaptureChanged = "default_capture_changed"
-	EventRenderVolumeChanged   = "render_volume_changed"
-	EventCaptureVolumeChanged  = "capture_volume_changed"
-)
+type FlowType uint8
 
 const (
-	FlowRender  = "render"
-	FlowCapture = "capture"
+	FlowTypeRender  FlowType = 1
+	FlowTypeCapture FlowType = 2
 )
 
 const (

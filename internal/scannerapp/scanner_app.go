@@ -72,7 +72,7 @@ func (a *scannerAppImpl) attachHandlers() {
 	// Volume change notifications.
 	soundlibwrap.SetRenderVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultRender(a.soundLibHandle); err == nil {
-			a.putVolumeChangeToApi(uint8(contract.EventTypeVolumeRenderChanged), desc.PnpID, int(desc.RenderVolume))
+			a.putVolumeChangeToApi(uint8(contract.MessageTypeVolumeRenderChanged), desc.PnpID, int(desc.RenderVolume))
 			a.logInfo("Render volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.RenderVolume)
 		} else {
 			a.logError("Render volume changed, can not read it: %v", err)
@@ -80,7 +80,7 @@ func (a *scannerAppImpl) attachHandlers() {
 	})
 	soundlibwrap.SetCaptureVolumeChangedHandler(func() {
 		if desc, err := soundlibwrap.GetDefaultCapture(a.soundLibHandle); err == nil {
-			a.putVolumeChangeToApi(uint8(contract.EventTypeVolumeCaptureChanged), desc.PnpID, int(desc.CaptureVolume))
+			a.putVolumeChangeToApi(uint8(contract.MessageTypeVolumeCaptureChanged), desc.PnpID, int(desc.CaptureVolume))
 			a.logInfo("Capture volume changed: name=%q pnpId=%q vol=%d", desc.Name, desc.PnpID, desc.CaptureVolume)
 		} else {
 			a.logError("Capture volume changed, can not read it: %v", err)
@@ -95,7 +95,7 @@ func (a *scannerAppImpl) Shutdown() {
 	}
 }
 
-func (a *scannerAppImpl) putVolumeChangeToApi(eventType uint8, pnpID string, volume int) {
+func (a *scannerAppImpl) putVolumeChangeToApi(messageType uint8, pnpID string, volume int) {
 	fields := map[string]string{
 		contract.FieldUpdateDate: time.Now().UTC().Format(time.RFC3339),
 		contract.FieldVolume:     strconv.Itoa(volume),
@@ -104,14 +104,14 @@ func (a *scannerAppImpl) putVolumeChangeToApi(eventType uint8, pnpID string, vol
 		fields[contract.FieldPnpID] = pnpID
 	}
 
-	a.enqueueFunc(eventType, fields)
+	a.enqueueFunc(messageType, fields)
 }
 
 func (a *scannerAppImpl) RepostRenderDeviceToApi() {
 	if desc, err := soundlibwrap.GetDefaultRender(a.soundLibHandle); err == nil {
 		renderVolume := int(desc.RenderVolume)
 		captureVolume := int(desc.CaptureVolume)
-		a.postDeviceToApi(uint8(contract.EventTypeDefaultRenderChanged), contract.FlowRender, desc.Name, desc.PnpID, renderVolume, captureVolume)
+		a.postDeviceToApi(uint8(contract.MessageTypeDefaultRenderChanged), desc.Name, desc.PnpID, renderVolume, captureVolume)
 		a.logInfo("Render device identified and updated: name=%q pnpId=%q renderVol=%d captureVol=%d", desc.Name, desc.PnpID, desc.RenderVolume, desc.CaptureVolume)
 	} else {
 		a.logError("Render device can not be identified: %v", err)
@@ -122,22 +122,21 @@ func (a *scannerAppImpl) RepostCaptureDeviceToApi() {
 	if desc, err := soundlibwrap.GetDefaultCapture(a.soundLibHandle); err == nil {
 		renderVolume := int(desc.RenderVolume)
 		captureVolume := int(desc.CaptureVolume)
-		a.postDeviceToApi(uint8(contract.EventTypeDefaultCaptureChanged), contract.FlowCapture, desc.Name, desc.PnpID, renderVolume, captureVolume)
+		a.postDeviceToApi(uint8(contract.MessageTypeDefaultCaptureChanged), desc.Name, desc.PnpID, renderVolume, captureVolume)
 		a.logInfo("Capture device identified and updated: name=%q pnpId=%q renderVol=%d captureVol=%d", desc.Name, desc.PnpID, desc.RenderVolume, desc.CaptureVolume)
 	} else {
 		a.logError("Capture device can not be identified: %v", err)
 	}
 }
 
-func (a *scannerAppImpl) postDeviceToApi(event uint8, flowType, name, pnpID string, renderVolume, captureVolume int) {
+func (a *scannerAppImpl) postDeviceToApi(messageType uint8, name, pnpID string, renderVolume, captureVolume int) {
 	fields := map[string]string{
 		contract.FieldUpdateDate:    time.Now().UTC().Format(time.RFC3339),
-		contract.FieldFlowType:      flowType,
 		contract.FieldName:          name,
 		contract.FieldPnpID:         pnpID,
 		contract.FieldRenderVolume:  strconv.Itoa(renderVolume),
 		contract.FieldCaptureVolume: strconv.Itoa(captureVolume),
 	}
 
-	a.enqueueFunc(event, fields)
+	a.enqueueFunc(messageType, fields)
 }

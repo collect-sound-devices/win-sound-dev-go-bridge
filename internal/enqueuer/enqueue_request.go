@@ -3,9 +3,9 @@ package enqueuer
 import "time"
 
 type Request struct {
-	Timestamp time.Time
-	Event     uint8
-	Fields    map[string]string
+	Timestamp   time.Time
+	MessageType uint8
+	Fields      map[string]string
 }
 
 type EnqueueRequest interface {
