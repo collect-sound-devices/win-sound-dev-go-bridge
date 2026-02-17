@@ -95,7 +95,7 @@ func (a *scannerAppImpl) Shutdown() {
 	}
 }
 
-func (a *scannerAppImpl) putVolumeChangeToApi(eventType uint8, pnpID string, volume int) {
+func (a *scannerAppImpl) putVolumeChangeToApi(messageType uint8, pnpID string, volume int) {
 	fields := map[string]string{
 		contract.FieldUpdateDate: time.Now().UTC().Format(time.RFC3339),
 		contract.FieldVolume:     strconv.Itoa(volume),
@@ -104,7 +104,7 @@ func (a *scannerAppImpl) putVolumeChangeToApi(eventType uint8, pnpID string, vol
 		fields[contract.FieldPnpID] = pnpID
 	}
 
-	a.enqueueFunc(eventType, fields)
+	a.enqueueFunc(messageType, fields)
 }
 
 func (a *scannerAppImpl) RepostRenderDeviceToApi() {
