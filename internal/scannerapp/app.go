@@ -83,7 +83,7 @@ func newRequestEnqueuer(ctx context.Context, logger logging.Logger) (enqueuer.En
 		return nil, nil, err
 	}
 
-	reqEnqueuer := enqueuer.NewRabbitMqEnqueuerWithContext(ctx, publisher, logger)
+	reqEnqueuer := rabbitmq.NewRabbitMqEnqueuerWithContext(ctx, publisher, logger)
 	cleanup := func() {
 		if err := reqEnqueuer.Close(); err != nil {
 			logging.PrintError(logger, "rabbitmq enqueuer close failed: %v", err)
