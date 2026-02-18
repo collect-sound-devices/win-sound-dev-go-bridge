@@ -7,12 +7,13 @@ import (
 	"strings"
 	"time"
 
+	c "github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/contract"
 	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/enqueuer"
 	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/logging"
 	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/rabbitmq"
 )
 
-func NewWithLogger(enqueue func(uint8, map[string]string), logger logging.Logger) (ScannerApp, error) {
+func NewWithLogger(enqueue func(c.EventType, map[string]string), logger logging.Logger) (ScannerApp, error) {
 	return NewImpl(
 		enqueue,
 		func(format string, v ...interface{}) { logging.PrintInfo(logger, format, v...) },
@@ -28,11 +29,11 @@ func Run(ctx context.Context) error {
 	}
 	defer cleanupEnqueuer()
 
-	enqueue := func(messageType uint8, fields map[string]string) {
+	enqueue := func(event c.EventType, fields map[string]string) {
 		if err := reqEnqueuer.EnqueueRequest(enqueuer.Request{
-			Timestamp:   time.Now(),
-			MessageType: messageType,
-			Fields:      fields,
+			Timestamp: time.Now(),
+			Event:     event,
+			Fields:    fields,
 		}); err != nil {
 			logging.PrintError(appLogger, "enqueue failed: %v", err)
 		}
@@ -49,10 +50,6 @@ func Run(ctx context.Context) error {
 		return err
 	}
 	defer app.Shutdown()
-
-	// Post the default render and capture devices.
-	app.RepostRenderDeviceToApi()
-	app.RepostCaptureDeviceToApi()
 
 	// Keep running until interrupted to receive async logs and change events.
 	<-ctx.Done()

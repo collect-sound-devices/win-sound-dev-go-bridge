@@ -1,11 +1,14 @@
 package enqueuer
 
-import "time"
+import (
+	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/contract"
+	"time"
+)
 
 type Request struct {
-	Timestamp   time.Time
-	MessageType uint8
-	Fields      map[string]string
+	Timestamp time.Time
+	Event     contract.EventType
+	Fields    map[string]string
 }
 
 type EnqueueRequest interface {

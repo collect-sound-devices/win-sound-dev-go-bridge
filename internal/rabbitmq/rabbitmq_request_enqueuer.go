@@ -89,8 +89,10 @@ func (e *RabbitMqEnqueuer) EnqueueRequest(request enqueuer.Request) error {
 	for key, value := range request.Fields {
 		payload[key] = normalizeValue(key, value)
 	}
-	payload[contract.FieldDeviceMessageType] = request.MessageType
 
+	messageType, flowType := calculateFlowAndMessageType(request.Event)
+
+	payload[contract.FieldDeviceMessageType] = messageType
 	httpRequest, urlSuffix := e.resolveHttpRequest(request, payload)
 	payload[contract.FieldHTTPRequest] = httpRequest
 	payload[contract.FieldURLSuffix] = urlSuffix
@@ -103,7 +105,6 @@ func (e *RabbitMqEnqueuer) EnqueueRequest(request enqueuer.Request) error {
 			payload[contract.FieldOperationSystemName] = e.operationSysName
 		}
 
-		flowType := calculateFlowTypeField(contract.MessageType(request.MessageType))
 		if flowType != 0 {
 			payload[contract.FieldFlowType] = flowType
 		}
@@ -133,10 +134,13 @@ func (e *RabbitMqEnqueuer) Close() error {
 }
 
 func (e *RabbitMqEnqueuer) resolveHttpRequest(request enqueuer.Request, payload map[string]any) (string, string) {
-	messageType := contract.MessageType(request.MessageType)
 	var httpRequest string
-	switch messageType {
-	case contract.MessageTypeDefaultRenderChanged, contract.MessageTypeDefaultCaptureChanged:
+
+	switch request.Event {
+	case contract.EventTypeRenderDeviceDiscovered,
+		contract.EventTypeCaptureDeviceDiscovered,
+		contract.EventTypeRenderDeviceConfirmed,
+		contract.EventTypeCaptureDeviceConfirmed:
 		httpRequest = "POST"
 	default:
 		httpRequest = "PUT"
@@ -161,14 +165,34 @@ func readStringField(payload map[string]any, key string) string {
 	return ""
 }
 
-func calculateFlowTypeField(messageType contract.MessageType) contract.FlowType {
-	switch messageType {
-	case contract.MessageTypeDefaultRenderChanged, contract.MessageTypeVolumeRenderChanged:
-		return contract.FlowTypeRender
-	case contract.MessageTypeDefaultCaptureChanged, contract.MessageTypeVolumeCaptureChanged:
-		return contract.FlowTypeCapture
+func calculateFlowAndMessageType(event contract.EventType) (contract.FlowType, contract.MessageType) {
+
+	var flow contract.FlowType
+	var message contract.MessageType
+
+	switch event {
+	case contract.EventTypeRenderDeviceConfirmed, contract.EventTypeRenderDeviceDiscovered, contract.EventTypeRenderVolumeChanged:
+		flow = contract.FlowTypeRender
+	case contract.EventTypeCaptureDeviceConfirmed, contract.EventTypeCaptureDeviceDiscovered, contract.EventTypeCaptureVolumeChanged:
+		flow = contract.FlowTypeCapture
+	default:
+		flow = 0
 	}
-	return 0
+
+	switch event {
+	case contract.EventTypeRenderDeviceConfirmed, contract.EventTypeCaptureDeviceConfirmed:
+		message = contract.MessageTypeConfirmed
+	case contract.EventTypeRenderDeviceDiscovered, contract.EventTypeCaptureDeviceDiscovered:
+		message = contract.MessageTypeDiscovered
+	case contract.EventTypeRenderVolumeChanged:
+		message = contract.MessageTypeVolumeRenderChanged
+	case contract.EventTypeCaptureVolumeChanged:
+		message = contract.MessageTypeVolumeCaptureChanged
+	default:
+		message = 0
+	}
+
+	return flow, message
 }
 
 func normalizeValue(key string, value string) any {
