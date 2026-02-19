@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -26,6 +27,7 @@ const (
 	serviceName        = "WinSoundScanner"
 	serviceDisplayName = "Win Sound Scanner"
 	serviceDescription = "Collects Windows default sound devices and publishes events."
+	serviceLogFileName = "service.log"
 )
 
 var serviceEnvKeys = []string{
@@ -74,6 +76,10 @@ func (p *scannerProgram) Start(_ service.Service) error {
 
 	if p.done != nil {
 		return nil
+	}
+
+	if err := configureServiceFileLogging(); err != nil {
+		return err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -165,6 +171,39 @@ func isServiceCommand(cmd string) bool {
 	default:
 		return false
 	}
+}
+
+func programDataDir() (string, error) {
+	if v, ok := os.LookupEnv("ProgramData"); ok && strings.TrimSpace(v) != "" {
+		return v, nil
+	}
+	if v, ok := os.LookupEnv("ALLUSERSPROFILE"); ok && strings.TrimSpace(v) != "" {
+		return v, nil
+	}
+	return "", errors.New("ProgramData is not available in environment")
+}
+
+func configureServiceFileLogging() error {
+	baseDir, err := programDataDir()
+	if err != nil {
+		return err
+	}
+
+	logDir := filepath.Join(baseDir, serviceName)
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
+		return fmt.Errorf("create service log directory: %w", err)
+	}
+
+	logPath := filepath.Join(logDir, serviceLogFileName)
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		return fmt.Errorf("open service log file: %w", err)
+	}
+
+	log.SetOutput(logFile)
+	os.Stdout = logFile
+	os.Stderr = logFile
+	return nil
 }
 
 func main() {

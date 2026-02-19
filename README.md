@@ -42,6 +42,8 @@ Service commands (run in elevated PowerShell):
 .\bin\win-sound-scanner.exe restart
 .\bin\win-sound-scanner.exe uninstall
 ```
+Service logs are written to:
+`%ProgramData%\WinSoundScanner\service.log`
 
 To store RabbitMQ settings as service environment variables, set them before `install`:
 ```powershell
@@ -59,8 +61,10 @@ By default, scanner uses the RabbitMQ-enqueuer (`WIN_SOUND_ENQUEUER=rabbitmq`).
 To disable request publishing to RabbitMQ, set it to `empty`:
 ```powershell
 $Env:WIN_SOUND_ENQUEUER = "empty"
+```
 
-# Optional overrides (defaults shown)
+Optional overrides with default values:
+```powershell
 $Env:WIN_SOUND_RABBITMQ_HOST = "localhost"
 $Env:WIN_SOUND_RABBITMQ_PORT = "5672"
 $Env:WIN_SOUND_RABBITMQ_VHOST = "/"
