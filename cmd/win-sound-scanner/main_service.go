@@ -11,6 +11,8 @@ import (
 	"sync"
 
 	"github.com/kardianos/service"
+
+	"github.com/collect-sound-devices/win-sound-dev-go-bridge/internal/scannerapp"
 )
 
 const (
@@ -21,15 +23,15 @@ const (
 )
 
 var serviceEnvKeys = []string{
-	"WIN_SOUND_ENQUEUER",
-	"WIN_SOUND_RABBITMQ_HOST",
-	"WIN_SOUND_RABBITMQ_PORT",
-	"WIN_SOUND_RABBITMQ_VHOST",
-	"WIN_SOUND_RABBITMQ_USER",
-	"WIN_SOUND_RABBITMQ_PASSWORD",
-	"WIN_SOUND_RABBITMQ_EXCHANGE",
-	"WIN_SOUND_RABBITMQ_QUEUE",
-	"WIN_SOUND_RABBITMQ_ROUTING_KEY",
+	scannerapp.EnvWinSoundEnqueuer,
+	scannerapp.EnvWinSoundRabbitMQHost,
+	scannerapp.EnvWinSoundRabbitMQPort,
+	scannerapp.EnvWinSoundRabbitMQVHost,
+	scannerapp.EnvWinSoundRabbitMQUser,
+	scannerapp.EnvWinSoundRabbitMQPassword,
+	scannerapp.EnvWinSoundRabbitMQExchange,
+	scannerapp.EnvWinSoundRabbitMQQueue,
+	scannerapp.EnvWinSoundRabbitMQRoutingKey,
 }
 
 type scannerProgram struct {
