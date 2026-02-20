@@ -1,6 +1,15 @@
-# win-sound-dev-go-bridge
+# win-sound-scanner (Windows Sound Scanner, WinSoundScanner)
 
-Go + cgo bridge to `SoundAgentApiDll.dll` for monitoring/querying Windows default audio devices.
+WinSoundScanner detects default audio endpoint devices under Windows.
+Besides, it handles thew following audio notifications: sound device changes and sound volume adjustments.
+
+The WinSoundScanner registers audio device information on a backend server via REST API, pushing the respective request-messages to RabbitMQ channel.
+The separate RMQ To REST API Forwarder .NET Windows Service fetches these messages and forwards them to the REST API calls.
+The respective backend, Audio Device Repository Server (ASP.Net Core), resides in [audio-device-repo-server](https://github.com/collect-sound-devices/audio-device-repo-server/) with a React / TypeScript frontend [list-audio-react-app](https://github.com/collect-sound-devices/list-audio-react-app/), see [Primary Web Client](https://list-audio-react-app.vercel.app).
+![primaryWebClient screenshot](202509011555ReactRepoApp.jpg)
+
+Technically, WinSoundScanner is a Go(Golang)+CGO bridge to the C++ `SoundAgentApi.dll` (monitoring/querying Windows Dll) and event redirector.
+It can run as a console application or as a Windows Service.
 
 ## Build (powershell)
 
