@@ -1,6 +1,3 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
 name: Go
 
 on:
@@ -134,7 +131,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path (Join-Path $PWD "bin") | Out-Null
 
-          $ldflags = "-X github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
+          $ldflags = "-X github.com/collect-sound-devices/win-sound-scanner-go/pkg/appinfo.Version=$Env:APP_VERSION"
           Write-Host "[non-fatal] Running initial go build with CGO..."
           go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
           if ($LASTEXITCODE -ne 0) {
@@ -160,8 +157,7 @@ jobs:
         env:
           APP_VERSION: ${{ env.APP_VERSION }}
         run: |
-          $ldflags = "-X github.com/collect-sound-devices/win-sound-dev-go-bridge/pkg/appinfo.Version=$Env:APP_VERSION"
-          Write-Host "Restarting go build with CGO..."
+          $ldflags = "-X github.com/collect-sound-devices/win-sound-scanner-go/pkg/appinfo.Version=$Env:APP_VERSION"
           go build -ldflags $ldflags -o (Join-Path $PWD.Path 'bin/win-sound-scanner.exe') ./cmd/win-sound-scanner
 
       - name: Package bin directory
@@ -169,7 +165,7 @@ jobs:
         env:
           APP_VERSION: ${{ env.APP_VERSION }}
         run: |
-          $artifactName = "go-bridge-$Env:APP_VERSION.zip"
+          $artifactName = "win-sound-scanner-go-$Env:APP_VERSION.zip"
           Write-Host "Creating artifact $artifactName from bin/ ..."
           $binPath = Join-Path $PWD "bin"
           if (-not (Test-Path -Path $binPath)) {
@@ -184,7 +180,7 @@ jobs:
           APP_VERSION: ${{ env.APP_VERSION }}
         with:
           name: Artifacts
-          path: go-bridge-${{ env.APP_VERSION }}.zip
+          path: WinSoundScanner-${{ env.APP_VERSION }}.zip
           if-no-files-found: error
 
   publish:
@@ -213,11 +209,11 @@ jobs:
           if gh release view "$VERS" > /dev/null 2>&1; then
             echo "Release $VERS already exists; updating assets"
           else
-            gh release create "$VERS" --title "Go-bridge $VERS" --notes "Release $VERS"
+            gh release create "$VERS" --title "WinSoundScanner $VERS" --notes "Release $VERS"
           fi
           # Upload or update the build artifact as a release asset
-          if [ -f "build/go-bridge-$VERS.zip" ]; then
-            gh release upload "$VERS" "build/go-bridge-$VERS.zip" --clobber
+          if [ -f "build/WinSoundScanner-$VERS.zip" ]; then
+            gh release upload "$VERS" "build/WinSoundScanner-$VERS.zip" --clobber
           elif [ -n "$(ls build 2>/dev/null)" ]; then
             # Fallback: upload any file(s) in the build directory
             gh release upload "$VERS" build/* --clobber
