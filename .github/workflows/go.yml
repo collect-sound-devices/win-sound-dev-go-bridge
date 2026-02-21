@@ -165,7 +165,7 @@ jobs:
         env:
           APP_VERSION: ${{ env.APP_VERSION }}
         run: |
-          $artifactName = "win-sound-scanner-go-$Env:APP_VERSION.zip"
+          $artifactName = "WinSoundScanner-$Env:APP_VERSION.zip"
           Write-Host "Creating artifact $artifactName from bin/ ..."
           $binPath = Join-Path $PWD "bin"
           if (-not (Test-Path -Path $binPath)) {
