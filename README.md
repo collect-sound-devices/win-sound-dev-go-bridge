@@ -28,16 +28,20 @@ It can run as a console application or as a Windows Service.
   `.\bin\win-sound-scanner.exe start` (or stop: `.\bin\win-sound-scanner.exe stop`). Service logs are written to:
    `%ProgramData%\WinSoundScanner\service.log`
 
-Note: The win-sound-scanner.exe can be started as a Windows CLI, too, with logging to the console window. Stop it via Ctrl-CC
+Note: The win-sound-scanner.exe can be started as a Windows CLI, too, with logging to the console window. Stop it via Ctrl-C
 
 ### Configuration
 #### RabbitMQ Mode
-By default, scanner uses the RabbitMQ-enqueuer (`WIN_SOUND_ENQUEUER=rabbitmq`).
-To disable request publishing to RabbitMQ, set it to `empty`:
-```powershell
-$Env:WIN_SOUND_ENQUEUER = "empty"
-```
-### Optional RabbitMQ mode overrides with default values:
+By default, scanner uses the RabbitMQ-enqueuer to publish device information. This requires a running RabbitMQ instance.
+To disable request publishing to RabbitMQ, set the environment variable `WIN_SOUND_ENQUEUER` to `empty`:
+  ```powershell
+  $Env:WIN_SOUND_ENQUEUER = "empty"
+  ```
+In order to use RabbitMQ again, set it back to empty string `rabbitmq`:
+  ```powershell
+  $Env:WIN_SOUND_ENQUEUER = "rabbitmq"
+  ```
+#### Optional RabbitMQ mode overrides with default values:
 ```powershell
 $Env:WIN_SOUND_RABBITMQ_HOST = "localhost"
 $Env:WIN_SOUND_RABBITMQ_PORT = "5672"
@@ -48,7 +52,7 @@ $Env:WIN_SOUND_RABBITMQ_EXCHANGE = "sdr_exchange"
 $Env:WIN_SOUND_RABBITMQ_QUEUE = "sdr_queue"
 $Env:WIN_SOUND_RABBITMQ_ROUTING_KEY = "sdr_bind"
 ```
-### Service configuration with environment variables
+#### Service configuration with environment variables
 To store RabbitMQ settings as service environment variables, set them before `install`:
 ```powershell
 $Env:WIN_SOUND_ENQUEUER = "rabbitmq"
@@ -59,7 +63,6 @@ $Env:WIN_SOUND_RABBITMQ_PORT = "5672"
 ```
 Only currently defined `WIN_SOUND_*` variables are written into the service config.
 If you change service env vars later, run `stop`, `uninstall`, `install`, `start`.
-
 
 ## Build and Debug
 
