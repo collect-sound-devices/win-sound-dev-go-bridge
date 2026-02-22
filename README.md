@@ -2,16 +2,19 @@
 
 WinSoundScanner detects audio endpoint devices under Windows and enqueues this information to a message queue for a target backend server.
 
+## Architecture
+![architecture diagram](./docs/module-interaction02.png)
+
 ## Functions
 - The WinSoundScanner collects audio device information on startup and subscribes to its changes with help of a C++/Go module, see [sound-win-scanner](https://github.com/collect-sound-devices/sound-win-scanner).
 - It forms the respective request-messages and pushes them to RabbitMQ channel.
 - The separate RMQ To REST API Forwarder (.NET Windows Service) fetches the request-messages, transforms them to the REST API format (POST and PUT) and sends them to the 
 Audio Device Repository Server (ASP.Net Core) [audio-device-repo-server](https://github.com/collect-sound-devices/audio-device-repo-server/) with a React / TypeScript frontend [list-audio-react-app](https://github.com/collect-sound-devices/list-audio-react-app/), see [Primary Web Client](https://list-audio-react-app.vercel.app) application
-![primaryWebClient screenshot](202509011555ReactRepoApp.jpg)
+![primaryWebClient screenshot](./docs/202509011555ReactRepoApp.jpg)
 
 ## Technologies Used
 
-- **C++**: Core logic implementation for audio device detection and interaction with Windows APIs.
+- **C++/WindowsAPI/Go backend**: Core logic implementation for audio device detection and interaction with Windows APIs.
 - **Go (Golang)**: Used for the main application logic and integration with C++ via CGO.
 - **RabbitMQ**: Message queuing for communication between components.
 

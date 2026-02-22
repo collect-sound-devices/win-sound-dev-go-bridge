@@ -1,0 +1,55 @@
+flowchart BT
+  classDef edgeLabel fill:none,stroke:none,stroke-width:0px,color:#555,font-size:11px;
+  classDef transparent fill:none,stroke:none;
+%%  classDef startPoint fill:#d4edda,stroke:#28a745,stroke-width:2px;
+  classDef startPoint fill:#fff,stroke:#000,stroke-width:2px;
+  classDef default fill:#fff,stroke:#000,color:#000;
+  classDef bold fill:#fff,stroke:#000,stroke-width:3px,color:#000;
+subgraph LEFT
+  WIN["Windows Core Audio"]:::bold
+
+  SRV(["▶ Windows Startup"]):::startPoint
+
+  subgraph WS["WinSoundScanner (Go)"]
+    RUN["scannerapp.Run"]
+    APP["<b>scannerapp</b>"]:::bold
+  end
+  style WS fill:#fff,stroke:#000,color:#000
+
+  CHAN(["RMQ Channel"]):::bold
+
+  SRV --> |START WinSoundScanner service| RUN
+  RUN --> |START| APP
+
+  APP ==> |EQUEUE Requests| CHAN
+end
+class LEFT transparent
+
+subgraph RIGHT
+  subgraph BCK["sound-win-scanner backend"]
+	WRAP["soundlibwrap<br>(Go/CGO)"]:::bold
+	DLL["SoundAgentApi.dll<br>(ANSI C API)"]
+	LIB["SoundAgentLib, C++ class <br>SoundDeviceCollection"]:::bold
+  end
+  style BCK fill:#fff,stroke:#000,color:#000
+
+  L_GO["ENABLE Go<br>event handlers"]:::edgeLabel
+  L_INIT["INITIALIZE backend,<br/>register callbacks etc"]:::edgeLabel
+
+  WRAP --> L_GO --> APP
+  APP --> L_INIT --> WRAP
+
+  APP --> |ACCESS device| WRAP
+  WRAP ==> |Device <b>EVENTS</b>| APP 
+
+  WRAP --> |ACCESS C API| DLL
+  DLL --> |ACCESS C++ API| LIB
+
+  LIB ==>|SaaEvent <b>CALLBACKS</b>| DLL
+  DLL ==>|CGO <b>CALLBACKS</b>| WRAP
+
+end
+class RIGHT transparent
+
+WIN ==> |Device and volume change<br>NOTIFICATIONS| LIB
+LIB --> |ACCESS device charachteristics| WIN
