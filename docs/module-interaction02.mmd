@@ -6,7 +6,7 @@ flowchart BT
   classDef default fill:transparent,stroke:currentColor,color:currentColor;
   classDef bold fill:transparent,stroke:currentColor,stroke-width:3px,color:currentColor;
   linkStyle default stroke:currentColor,color:currentColor;
-subgraph LEFT
+subgraph LEFT["#10;"]
   WIN["Windows Core Audio"]:::bold
 
   SRV(["▶ Windows Startup"]):::startPoint
@@ -26,7 +26,7 @@ subgraph LEFT
 end
 class LEFT transparent
 
-subgraph RIGHT
+subgraph RIGHT["#10;"]
   subgraph BCK["sound-win-scanner backend"]
 	WRAP["soundlibwrap<br>(Go/CGO)"]:::bold
 	DLL["SoundAgentApi.dll<br>(ANSI C API)"]
