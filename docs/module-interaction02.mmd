@@ -1,11 +1,11 @@
 flowchart BT
-  classDef edgeLabel fill:none,stroke:none,stroke-width:0px,color:currentColor,font-size:11px;
+  classDef edgeLabel fill:#f6f8fa,stroke:#57606a,stroke-width:1px,color:#24292f,font-size:11px;
   classDef transparent fill:none,stroke:none;
 %%  classDef startPoint fill:#d4edda,stroke:#28a745,stroke-width:2px;
-  classDef startPoint fill:transparent,stroke:currentColor,stroke-width:2px,color:currentColor;
-  classDef default fill:transparent,stroke:currentColor,color:currentColor;
-  classDef bold fill:transparent,stroke:currentColor,stroke-width:3px,color:currentColor;
-  linkStyle default stroke:currentColor,color:currentColor;
+  classDef startPoint fill:#f6f8fa,stroke:#57606a,stroke-width:2px,color:#24292f;
+  classDef default fill:#f6f8fa,stroke:#57606a,color:#24292f;
+  classDef bold fill:#f6f8fa,stroke:#57606a,stroke-width:3px,color:#24292f;
+  linkStyle default stroke:#1f6feb,color:#24292f,stroke-width:2px;
 subgraph LEFT["#10;"]
   WIN["Windows Core Audio"]:::bold
 
@@ -15,7 +15,7 @@ subgraph LEFT["#10;"]
     RUN["scannerapp.Run"]
     APP["<b>scannerapp</b>"]:::bold
   end
-  style WS fill:transparent,stroke:currentColor,color:currentColor
+  style WS fill:#f6f8fa,stroke:#57606a,color:#24292f
 
   CHAN(["RMQ Channel"]):::bold
 
@@ -32,7 +32,7 @@ subgraph RIGHT["#10;"]
 	DLL["SoundAgentApi.dll<br>(ANSI C API)"]
 	LIB["SoundAgentLib, C++ class <br>SoundDeviceCollection"]:::bold
   end
-  style BCK fill:transparent,stroke:currentColor,color:currentColor
+  style BCK fill:#f6f8fa,stroke:#57606a,color:#24292f
 
   L_GO["ENABLE Go<br>event handlers"]:::edgeLabel
   L_INIT["INITIALIZE backend,<br/>register callbacks etc"]:::edgeLabel
