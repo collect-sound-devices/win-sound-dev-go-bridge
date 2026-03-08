@@ -9,9 +9,9 @@ WinSoundScanner monitors audio devices and publishes their state changes to Rabb
 ```mermaid
 flowchart BT
 
-classDef dottedBox fill:transparent,fill-opacity:0.55, stroke-dasharray:20 5,stroke-width:2px;
-classDef stressedBox fill:#f0f0f0,fill-opacity:0.2,stroke-width:4px;
-classDef invisibleNode fill:transparent,stroke:transparent;
+classDef dottedBox fill:transparent, fill-opacity:0.55, stroke-dasharray:10 8, stroke-width:2px;
+classDef stressedBox fill:#f0f0f0, fill-opacity:0.2, stroke-dasharray:10 8, stroke-width:4px;
+classDef invisibleNode fill:transparent, stroke:transparent;
 
 coreAudioApi["Core Audio<br>(Windows API)"]
 
@@ -37,9 +37,9 @@ subgraph scannerService["<b>win-sound-scanner-go</b>"]
 end
 class scannerService stressedBox
 
-subgraph requestQueueMicroservice["rmq-to-rest-api-forwarder"]
+subgraph requestQueueMicroservice["<br>"]
     requestQueue[("Request Queue<br>(RabbitMQ channel)")]
-    rabbitMqRestForwarder["RabbitMQ-to-REST Forwarder<br>(.NET microservice)"]
+    rabbitMqRestForwarder["RmqToRestApiForwarder<br>(.NET microservice)"]
 end
 class requestQueueMicroservice dottedBox
 
@@ -55,7 +55,7 @@ winSoundScannerService -->|Publish request messages| requestQueue
 
 requestQueue -->|Fetch request messages| rabbitMqRestForwarder
 rabbitMqRestForwarder --> |Detect request messages| requestQueue
-rabbitMqRestForwarder -->|Forward request messages| deviceRepositoryApi
+rabbitMqRestForwarder -->|POST/PUT requests| deviceRepositoryApi
 ```
 </div>
 
