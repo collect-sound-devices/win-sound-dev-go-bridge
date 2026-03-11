@@ -1,6 +1,6 @@
 # win-sound-scanner (Windows Sound Scanner, WinSoundScanner)
 
-WinSoundScanner detects audio endpoint devices under Windows and enqueues this information to a message queue for a target backend server.
+WinSoundScanner monitors audio devices and publishes their state changes to RabbitMQ for delivery to a REST API endpoint.
 
 ## Architecture
 
@@ -9,9 +9,9 @@ WinSoundScanner detects audio endpoint devices under Windows and enqueues this i
 ```mermaid
 flowchart BT
 
-classDef dottedBox fill:transparent,fill-opacity:0.55, stroke-dasharray:20 5,stroke-width:2px;
-classDef stressedBox fill:#f0f0f0,fill-opacity:0.2,stroke-width:4px;
-classDef invisibleNode fill:transparent,stroke:transparent;
+classDef dottedBox fill:transparent, fill-opacity:0.55, stroke-dasharray:10 8, stroke-width:2px;
+classDef stressedBox fill:#f0f0f0, fill-opacity:0.2, stroke-dasharray:10 8, stroke-width:4px;
+classDef invisibleNode fill:transparent, stroke:transparent;
 
 coreAudioApi["Core Audio<br>(Windows API)"]
 
@@ -31,15 +31,15 @@ soundAgentApiDll --> |Read device characteristics| coreAudioApi
 subgraph scannerService["<b>win-sound-scanner-go</b>"]
     invisible1["<br><br><br><br><br>"]
     class invisible1 invisibleNode
-    winSoundScannerService["WinSoundScanner<br>Go Windows Service"]
+    winSoundScannerService[["<b>WinSoundScanner</b><br>(Go Windows Service)"]]
     invisible2["<br><br><br><br><br>"]
     class invisible2 invisibleNode
 end
 class scannerService stressedBox
 
-subgraph requestQueueMicroservice["Request queue microservice"]
+subgraph requestQueueMicroservice["<br>"]
     requestQueue[("Request Queue<br>(RabbitMQ channel)")]
-    rabbitMqRestForwarder["RabbitMQ-to-REST Forwarder<br>(.NET microservice)"]
+    rabbitMqRestForwarder["RmqToRestApiForwarder<br>(.NET microservice)"]
 end
 class requestQueueMicroservice dottedBox
 
@@ -51,11 +51,11 @@ goCgoWrapper -->|Device events| winSoundScannerService
 goCgoWrapper --> |C API calls| soundAgentApiDll
 soundAgentApiDll -->|C / C++ callbacks| goCgoWrapper
 
-winSoundScannerService -->|Enqueue request messages| requestQueue
+winSoundScannerService -->|Publish request messages| requestQueue
 
 requestQueue -->|Fetch request messages| rabbitMqRestForwarder
 rabbitMqRestForwarder --> |Detect request messages| requestQueue
-rabbitMqRestForwarder -->|Forward request messages| deviceRepositoryApi
+rabbitMqRestForwarder -->|POST/PUT requests| deviceRepositoryApi
 ```
 </div>
 

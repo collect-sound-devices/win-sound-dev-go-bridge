@@ -1,6 +1,6 @@
 flowchart BT
 
-classDef stressedBox fill:#f0f0f0,fill-opacity:0.4,stroke-width:5px;
+classDef stressedBox fill:#f0f0f0, fill-opacity:0.2, stroke-dasharray:10 8, stroke-width:4px;
 
 coreAudioApi["Core Audio<br>(Windows API)"]
 
@@ -11,7 +11,7 @@ subgraph soundWinAgentModule["SoundWinAgent Monolith"]
     soundWinAgentService["<b>SoundWinAgent<br>(C++ Windows Service)</b>"]
     internalCppRequestQueue["Internal C++ request queue"]
 
-    soundWinAgentService --> |Enqueue request messages| httpRequestDispatcher
+    soundWinAgentService --> |Publish request messages| httpRequestDispatcher
 end
 class soundWinAgentModule stressedBox
 
@@ -23,5 +23,5 @@ deviceRepositoryApi["Device Repository Server<br>(REST API)"]
 soundWinAgentService --> |Access device| soundDeviceCollection
 soundDeviceCollection --> |Device events| soundWinAgentService
 
-httpRequestDispatcher --> |Push request| internalCppRequestQueue
+httpRequestDispatcher --> |Enqueue request messages| internalCppRequestQueue
 internalCppRequestQueue --> |POST/PUT requests| deviceRepositoryApi
