@@ -1,7 +1,9 @@
 package scannerapp
 
 import (
+	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/collect-sound-devices/sound-win-scanner/v4/pkg/soundlibwrap"
@@ -20,6 +22,8 @@ type scannerAppImpl struct {
 	enqueueFunc    func(c.EventType, map[string]string)
 	logInfo        func(string, ...interface{})
 	logError       func(string, ...interface{})
+	osName         string
+	hostName       string
 }
 
 func NewImpl(enqueue func(c.EventType, map[string]string), logInfo func(string, ...interface{}), logError func(string, ...interface{})) (*scannerAppImpl, error) {
@@ -45,12 +49,28 @@ func (app *scannerAppImpl) init() error {
 	if err != nil {
 		return err
 	}
+
 	app.soundLibHandle = h
 	if err := soundlibwrap.RegisterCallbacks(app.soundLibHandle); err != nil {
 		_ = soundlibwrap.Uninitialize(app.soundLibHandle)
 		app.soundLibHandle = 0
 		return err
 	}
+
+	if osName, err := soundlibwrap.GetExtendedOperatingSystemName(app.soundLibHandle); err != nil || strings.TrimSpace(osName) == "" {
+		app.logInfo("Cannot get OS name")
+		app.osName = "Unknown OS"
+	} else {
+		app.osName = osName
+	}
+
+	if hostName, err := os.Hostname(); err != nil || strings.TrimSpace(hostName) == "" {
+		app.logInfo("Cannot get host name")
+		app.hostName = "unknown-host"
+	} else {
+		app.hostName = hostName
+	}
+
 	return nil
 }
 
@@ -103,6 +123,7 @@ func (app *scannerAppImpl) putVolumeChangeToApi(event c.EventType, pnpID string,
 	fields := map[string]string{
 		c.FieldUpdateDate: time.Now().UTC().Format(time.RFC3339),
 		c.FieldVolume:     strconv.Itoa(volume),
+		c.FieldHostName:   app.hostName,
 	}
 	if pnpID != "" {
 		fields[c.FieldPnpID] = pnpID
@@ -135,11 +156,13 @@ func (app *scannerAppImpl) RepostCaptureDeviceToApi(event c.EventType) {
 
 func (app *scannerAppImpl) postDeviceToApi(event c.EventType, name, pnpID string, renderVolume, captureVolume int) {
 	fields := map[string]string{
-		c.FieldUpdateDate:    time.Now().UTC().Format(time.RFC3339),
-		c.FieldName:          name,
-		c.FieldPnpID:         pnpID,
-		c.FieldRenderVolume:  strconv.Itoa(renderVolume),
-		c.FieldCaptureVolume: strconv.Itoa(captureVolume),
+		c.FieldUpdateDate:          time.Now().UTC().Format(time.RFC3339),
+		c.FieldName:                name,
+		c.FieldPnpID:               pnpID,
+		c.FieldRenderVolume:        strconv.Itoa(renderVolume),
+		c.FieldCaptureVolume:       strconv.Itoa(captureVolume),
+		c.FieldOperationSystemName: app.osName,
+		c.FieldHostName:            app.hostName,
 	}
 
 	app.enqueueFunc(event, fields)

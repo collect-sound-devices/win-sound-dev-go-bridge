@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -23,12 +21,10 @@ type RabbitMessagePublisher interface {
 
 // RabbitMqEnqueuer writes requests to RabbitMQ using the same message-shaping
 type RabbitMqEnqueuer struct {
-	baseCtx          context.Context
-	publisher        RabbitMessagePublisher
-	logger           logging.Logger
-	hostName         string
-	operationSysName string
-	publishTimeout   time.Duration
+	baseCtx        context.Context
+	publisher      RabbitMessagePublisher
+	logger         logging.Logger
+	publishTimeout time.Duration
 }
 
 func NewRabbitMqEnqueuerWithContext(baseCtx context.Context, publisher RabbitMessagePublisher, logger logging.Logger) *RabbitMqEnqueuer {
@@ -42,16 +38,10 @@ func NewRabbitMqEnqueuerWithContext(baseCtx context.Context, publisher RabbitMes
 		panic("nil logger")
 	}
 
-	hostName, err := os.Hostname()
-	if err != nil || strings.TrimSpace(hostName) == "" {
-		hostName = "unknown-host"
-	}
 	return newRabbitMqEnqueuer(
 		baseCtx,
 		publisher,
 		logger,
-		hostName,
-		runtime.GOOS,
 		10*time.Second,
 	)
 }
@@ -60,27 +50,17 @@ func newRabbitMqEnqueuer(
 	baseCtx context.Context,
 	publisher RabbitMessagePublisher,
 	logger logging.Logger,
-	hostName string,
-	operationSysName string,
 	publishTimeout time.Duration,
 ) *RabbitMqEnqueuer {
-	if strings.TrimSpace(hostName) == "" {
-		hostName = "unknown-host"
-	}
-	if strings.TrimSpace(operationSysName) == "" {
-		operationSysName = runtime.GOOS
-	}
 	if publishTimeout <= 0 {
 		publishTimeout = 10 * time.Second
 	}
 
 	return &RabbitMqEnqueuer{
-		baseCtx:          baseCtx,
-		publisher:        publisher,
-		logger:           logger,
-		hostName:         hostName,
-		operationSysName: operationSysName,
-		publishTimeout:   publishTimeout,
+		baseCtx:        baseCtx,
+		publisher:      publisher,
+		logger:         logger,
+		publishTimeout: publishTimeout,
 	}
 }
 
@@ -98,13 +78,6 @@ func (e *RabbitMqEnqueuer) EnqueueRequest(request enqueuer.Request) error {
 	payload[contract.FieldURLSuffix] = urlSuffix
 
 	if httpRequest == "POST" {
-		if _, ok := payload[contract.FieldHostName]; !ok {
-			payload[contract.FieldHostName] = e.hostName
-		}
-		if _, ok := payload[contract.FieldOperationSystemName]; !ok {
-			payload[contract.FieldOperationSystemName] = e.operationSysName
-		}
-
 		if flowType != 0 {
 			payload[contract.FieldFlowType] = flowType
 		}
@@ -149,7 +122,10 @@ func (e *RabbitMqEnqueuer) resolveHttpRequest(request enqueuer.Request, payload 
 	urlSuffix := readStringField(payload, contract.FieldURLSuffix)
 	if urlSuffix == "" && httpRequest == "PUT" {
 		pnpID := readStringField(payload, contract.FieldPnpID)
-		urlSuffix = fmt.Sprintf("/%s/%s", pnpID, e.hostName)
+		hostName := readStringField(payload, contract.FieldHostName)
+
+		urlSuffix = fmt.Sprintf("/%s/%s", pnpID, hostName)
+		delete(payload, contract.FieldHostName) // contract.FieldHostName is only used for building the URL suffix, so we must remove it from the payload
 	}
 
 	return httpRequest, urlSuffix
